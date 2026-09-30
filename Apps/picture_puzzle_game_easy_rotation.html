@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Picture Puzzle Studio</title>
+  <style>
+    :root{
+      --bg1:#f7fbff;
+      --bg2:#fff7ec;
+      --panel:#ffffff;
+      --ink:#203047;
+      --muted:#65758b;
+      --primary:#6c63ff;
+      --primary-dark:#5149df;
+      --accent:#ff9f43;
+      --success:#23b26d;
+      --danger:#e74c3c;
+      --line:#dfe7f1;
+      --shadow:0 18px 45px rgba(44,62,80,.14);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 5%, rgba(108,99,255,.13), transparent 30%),
+        radial-gradient(circle at 90% 15%, rgba(255,159,67,.13), transparent 28%),
+        linear-gradient(135deg,var(--bg1),var(--bg2));
+    }
+
+    button,input,select{font:inherit}
+
+    .app{
+      width:min(1240px,100%);
+      margin:auto;
+      padding:24px;
+    }
+
+    .hero{
+      text-align:center;
+      margin-bottom:22px;
+    }
+
+    .hero h1{
+      margin:0;
+      font-size:clamp(2rem,5vw,3.6rem);
+      line-height:1;
+      letter-spacing:-.04em;
+    }
+
+    .hero p{
+      margin:12px auto 0;
+      max-width:760px;
+      color:var(--muted);
+      font-size:1.02rem;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns:minmax(260px,330px) minmax(0,1fr);
+      gap:22px;
+      align-items:start;
+    }
+
+    .panel,.game-card{
+      background:rgba(255,255,255,.93);
+      border:1px solid rgba(255,255,255,.8);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+
+    .panel{
+      padding:20px;
+      position:sticky;
+      top:16px;
+    }
+
+    .panel h2{
+      margin:0 0 16px;
+      font-size:1.2rem;
+    }
+
+    .field{
+      margin-bottom:16px;
+    }
+
+    .field label,
+    .switch-row .label{
+      display:block;
+      font-weight:750;
+      margin-bottom:7px;
+    }
+
+    .field small,.switch-row small{
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    .upload-box{
+      display:block;
+      border:2px dashed #b8c5d8;
+      border-radius:16px;
+      padding:18px;
+      text-align:center;
+      cursor:pointer;
+      transition:.2s ease;
+      background:#f9fbfe;
+    }
+
+    .upload-box:hover,
+    .upload-box:focus-within{
+      border-color:var(--primary);
+      background:#f3f1ff;
+      transform:translateY(-1px);
+    }
+
+    .upload-box input{display:none}
+    .upload-icon{font-size:2rem;display:block;margin-bottom:6px}
+    .upload-name{
+      display:block;
+      color:var(--muted);
+      margin-top:7px;
+      word-break:break-word;
+      font-size:.9rem;
+    }
+
+    select,input[type="number"]{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:11px 12px;
+      background:#fff;
+      color:var(--ink);
+      outline:none;
+    }
+
+    select:focus,input[type="number"]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(108,99,255,.15)}
+
+    .grid-inputs{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .grid-inputs small{
+      display:block;
+      margin-bottom:5px;
+      font-weight:700;
+      color:var(--muted);
+    }
+
+    .lock-row{
+      display:flex!important;
+      align-items:center;
+      gap:8px;
+      margin-top:10px!important;
+      font-weight:650!important;
+      font-size:.9rem;
+      cursor:pointer;
+    }
+
+    .piece-count-info{
+      margin-top:10px;
+      padding:9px 11px;
+      border-radius:11px;
+      background:#f3f1ff;
+      color:var(--primary-dark);
+      font-weight:800;
+      text-align:center;
+    }
+
+    .grid-warning{
+      margin-top:8px;
+      padding:9px 11px;
+      border-radius:11px;
+      background:#fff3cd;
+      color:#745000;
+      font-size:.84rem;
+      line-height:1.4;
+    }
+
+    .switch-row{
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:center;
+      padding:11px 0;
+      border-bottom:1px solid #edf1f6;
+    }
+
+    .switch-row:last-of-type{border-bottom:0}
+
+    .switch{
+      position:relative;
+      width:48px;
+      height:28px;
+      flex:0 0 auto;
+    }
+
+    .switch input{opacity:0;width:0;height:0}
+    .slider{
+      position:absolute;
+      inset:0;
+      background:#ccd6e4;
+      border-radius:999px;
+      cursor:pointer;
+      transition:.2s;
+    }
+    .slider:before{
+      content:"";
+      position:absolute;
+      width:20px;
+      height:20px;
+      left:4px;
+      top:4px;
+      border-radius:50%;
+      background:white;
+      box-shadow:0 2px 7px rgba(0,0,0,.18);
+      transition:.2s;
+    }
+    .switch input:checked + .slider{background:var(--primary)}
+    .switch input:checked + .slider:before{transform:translateX(20px)}
+
+    .button-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:18px;
+    }
+
+    button{
+      border:0;
+      border-radius:13px;
+      padding:12px 14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:transform .15s ease, box-shadow .15s ease, opacity .15s;
+    }
+    button:hover:not(:disabled){transform:translateY(-1px)}
+    button:active:not(:disabled){transform:translateY(1px)}
+    button:disabled{opacity:.45;cursor:not-allowed}
+
+    .primary{
+      background:linear-gradient(135deg,var(--primary),#8b83ff);
+      color:white;
+      box-shadow:0 8px 18px rgba(108,99,255,.28);
+    }
+    .secondary{
+      background:#eef2f7;
+      color:var(--ink);
+    }
+    .hint-btn{
+      background:linear-gradient(135deg,var(--accent),#ffbd72);
+      color:#482b00;
+    }
+
+    .game-card{
+      padding:18px;
+      min-height:520px;
+    }
+
+    .statusbar{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .stat{
+      background:#f5f8fc;
+      border:1px solid #e9eef5;
+      border-radius:15px;
+      padding:11px 14px;
+      text-align:center;
+    }
+    .stat span{display:block;color:var(--muted);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
+    .stat strong{display:block;margin-top:4px;font-size:1.25rem}
+
+    .board-wrap{
+      position:relative;
+      width:min(78vh,100%);
+      max-width:760px;
+      margin:auto;
+      aspect-ratio:1/1;
+      border-radius:18px;
+      overflow:hidden;
+      background:
+        linear-gradient(45deg,#edf2f8 25%,transparent 25%),
+        linear-gradient(-45deg,#edf2f8 25%,transparent 25%),
+        linear-gradient(45deg,transparent 75%,#edf2f8 75%),
+        linear-gradient(-45deg,transparent 75%,#edf2f8 75%);
+      background-size:28px 28px;
+      background-position:0 0,0 14px,14px -14px,-14px 0;
+      border:4px solid #fff;
+      box-shadow:0 8px 25px rgba(37,52,73,.16);
+      touch-action:none;
+      user-select:none;
+    }
+
+    .puzzle-board{
+      position:absolute;
+      inset:0;
+      display:grid;
+      gap:3px;
+      padding:3px;
+      z-index:2;
+    }
+
+    .piece{
+      position:relative;
+      overflow:hidden;
+      border-radius:7px;
+      cursor:grab;
+      background-color:#dfe7f1;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.55);
+      transition:transform .15s ease, box-shadow .15s ease, opacity .15s;
+      min-width:0;
+      min-height:0;
+    }
+
+    .piece:active{cursor:grabbing}
+    .piece.dragging{
+      opacity:.5;
+      transform:scale(.94);
+    }
+    .piece.drop-target{
+      box-shadow:inset 0 0 0 4px var(--accent);
+      transform:scale(.96);
+    }
+    .piece.correct{
+      box-shadow:inset 0 0 0 3px rgba(35,178,109,.85);
+    }
+
+    .piece-image{
+      position:absolute;
+      inset:0;
+      background-repeat:no-repeat;
+      transform-origin:center;
+      transition:transform .18s ease;
+      pointer-events:none;
+    }
+
+    .rotate-piece-btn{
+      position:absolute;
+      right:6px;
+      bottom:6px;
+      z-index:4;
+      width:38px;
+      height:38px;
+      padding:0;
+      display:grid;
+      place-items:center;
+      border:2px solid rgba(255,255,255,.9);
+      border-radius:50%;
+      background:rgba(32,48,71,.88);
+      color:white;
+      font-size:1.25rem;
+      line-height:1;
+      box-shadow:0 4px 12px rgba(0,0,0,.28);
+      touch-action:manipulation;
+    }
+    .rotate-piece-btn:hover{
+      background:var(--primary);
+      transform:scale(1.08);
+    }
+    .rotate-piece-btn:focus-visible{
+      outline:3px solid var(--accent);
+      outline-offset:2px;
+    }
+    .rotation-angle{
+      position:absolute;
+      left:6px;
+      bottom:6px;
+      z-index:3;
+      padding:3px 7px;
+      border-radius:999px;
+      background:rgba(32,48,71,.82);
+      color:white;
+      font-size:.7rem;
+      font-weight:800;
+      pointer-events:none;
+    }
+
+    @media (max-width:520px){
+      .rotate-piece-btn{width:32px;height:32px;font-size:1.05rem;right:3px;bottom:3px}
+      .rotation-angle{left:3px;bottom:3px;font-size:.62rem}
+    }
+
+    .hint-overlay{
+      position:absolute;
+      inset:0;
+      z-index:5;
+      background-position:center;
+      background-size:cover;
+      background-repeat:no-repeat;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .2s;
+    }
+
+    .hint-overlay.visible{opacity:.78}
+
+    .empty-state{
+      position:absolute;
+      inset:0;
+      z-index:7;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:28px;
+      background:rgba(255,255,255,.82);
+      backdrop-filter:blur(4px);
+    }
+
+    .empty-state .bubble{
+      width:min(460px,90%);
+      background:white;
+      border-radius:22px;
+      padding:26px;
+      box-shadow:var(--shadow);
+    }
+
+    .empty-state h3{margin:0 0 8px;font-size:1.45rem}
+    .empty-state p{margin:0;color:var(--muted);line-height:1.55}
+
+    .instructions{
+      margin:15px auto 0;
+      max-width:760px;
+      color:var(--muted);
+      text-align:center;
+      font-size:.92rem;
+      line-height:1.5;
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index:20;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(22,32,48,.58);
+      padding:20px;
+    }
+
+    .modal.open{display:flex}
+    .modal-card{
+      width:min(500px,100%);
+      background:white;
+      border-radius:24px;
+      padding:28px;
+      text-align:center;
+      box-shadow:0 25px 70px rgba(0,0,0,.28);
+      animation:pop .25s ease;
+    }
+    @keyframes pop{
+      from{transform:scale(.9);opacity:0}
+      to{transform:scale(1);opacity:1}
+    }
+    .trophy{font-size:3.7rem}
+    .modal-card h2{font-size:2rem;margin:6px 0}
+    .results{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin:20px 0;
+    }
+    .result-box{
+      background:#f5f8fc;
+      border-radius:16px;
+      padding:16px;
+    }
+    .result-box span{display:block;color:var(--muted);font-size:.8rem;text-transform:uppercase;font-weight:800}
+    .result-box strong{display:block;font-size:1.5rem;margin-top:5px}
+    .modal-card button{width:100%}
+
+    .confetti{
+      position:fixed;
+      width:10px;
+      height:16px;
+      z-index:25;
+      top:-20px;
+      animation:fall 2.6s linear forwards;
+      pointer-events:none;
+    }
+    @keyframes fall{
+      to{transform:translateY(110vh) rotate(720deg)}
+    }
+
+    @media (max-width:850px){
+      .app{padding:14px}
+      .layout{grid-template-columns:1fr}
+      .panel{position:relative;top:auto}
+      .game-card{min-height:auto}
+      .board-wrap{width:100%;max-width:680px}
+    }
+
+    @media (max-width:520px){
+      .statusbar{gap:6px}
+      .stat{padding:9px 6px}
+      .stat strong{font-size:1.05rem}
+      .button-grid{grid-template-columns:1fr}
+      .panel,.game-card{border-radius:17px}
+      .game-card{padding:10px}
+      .puzzle-board{gap:2px;padding:2px}
+      .piece{border-radius:4px}
+    }
+
+    @media (prefers-reduced-motion:reduce){
+      *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <h1>🧩 Picture Puzzle Studio</h1>
+      <p>Upload any picture, choose the difficulty, and solve it by dragging pieces into place.</p>
+    </header>
+
+    <section class="layout">
+      <aside class="panel" aria-label="Puzzle settings">
+        <h2>Game Settings</h2>
+
+        <div class="field">
+          <label for="imageInput">Choose an image</label>
+          <label class="upload-box" for="imageInput">
+            <span class="upload-icon">🖼️</span>
+            <strong>Tap to upload</strong>
+            <small>JPG, PNG, GIF, or WebP</small>
+            <span id="uploadName" class="upload-name">No image selected</span>
+            <input id="imageInput" type="file" accept="image/*" />
+          </label>
+        </div>
+
+        <div class="field">
+          <label>Puzzle grid</label>
+          <div class="grid-inputs">
+            <div>
+              <small>Rows</small>
+              <input id="rowsInput" type="number" min="2" max="30" value="3" inputmode="numeric" />
+            </div>
+            <div>
+              <small>Columns</small>
+              <input id="colsInput" type="number" min="2" max="30" value="3" inputmode="numeric" />
+            </div>
+          </div>
+          <label class="lock-row">
+            <input id="lockGridToggle" type="checkbox" checked />
+            Keep rows and columns equal
+          </label>
+          <div id="pieceCountInfo" class="piece-count-info">9 pieces</div>
+          <div id="gridWarning" class="grid-warning" hidden>Large puzzles may run more slowly on some devices.</div>
+        </div>
+
+        <div class="switch-row">
+          <div>
+            <span class="label">Piece rotation</span>
+            <small>Use the visible rotate button on each piece.</small>
+          </div>
+          <label class="switch">
+            <input id="rotationToggle" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-row">
+          <div>
+            <span class="label">Timer</span>
+            <small>Measure how long the puzzle takes.</small>
+          </div>
+          <label class="switch">
+            <input id="timerToggle" type="checkbox" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-row">
+          <div>
+            <span class="label">Hints</span>
+            <small>Allow image preview and correct-position highlights.</small>
+          </div>
+          <label class="switch">
+            <input id="hintsToggle" type="checkbox" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="button-grid">
+          <button id="startBtn" class="primary" disabled>Start Puzzle</button>
+          <button id="shuffleBtn" class="secondary" disabled>Shuffle</button>
+          <button id="previewBtn" class="hint-btn" disabled>Show Image</button>
+          <button id="checkBtn" class="secondary" disabled>Check Pieces</button>
+        </div>
+      </aside>
+
+      <section class="game-card">
+        <div class="statusbar" aria-live="polite">
+          <div class="stat"><span>Time</span><strong id="timeDisplay">00:00</strong></div>
+          <div class="stat"><span>Moves</span><strong id="moveDisplay">0</strong></div>
+          <div class="stat"><span>Correct</span><strong id="correctDisplay">0 / 9</strong></div>
+        </div>
+
+        <div id="boardWrap" class="board-wrap">
+          <div id="puzzleBoard" class="puzzle-board" aria-label="Puzzle board"></div>
+          <div id="hintOverlay" class="hint-overlay"></div>
+
+          <div id="emptyState" class="empty-state">
+            <div class="bubble">
+              <h3>Start with your favorite picture</h3>
+              <p>Upload an image, choose the grid size, then press <strong>Start Puzzle</strong>.</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="instructions">
+          Drag one piece onto another to swap them. When rotation is enabled, tap the ↻ button on a piece to rotate it 90°.
+        </p>
+      </section>
+    </section>
+  </main>
+
+  <div id="winModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="modal-card">
+      <div class="trophy">🏆</div>
+      <h2 id="winTitle">Puzzle Solved!</h2>
+      <p>You completed the picture.</p>
+      <div class="results">
+        <div class="result-box">
+          <span>Time</span>
+          <strong id="finalTime">00:00</strong>
+        </div>
+        <div class="result-box">
+          <span>Moves</span>
+          <strong id="finalMoves">0</strong>
+        </div>
+      </div>
+      <button id="playAgainBtn" class="primary">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const imageInput = document.getElementById("imageInput");
+      const uploadName = document.getElementById("uploadName");
+      const rowsInput = document.getElementById("rowsInput");
+      const colsInput = document.getElementById("colsInput");
+      const lockGridToggle = document.getElementById("lockGridToggle");
+      const pieceCountInfo = document.getElementById("pieceCountInfo");
+      const gridWarning = document.getElementById("gridWarning");
+      const rotationToggle = document.getElementById("rotationToggle");
+      const timerToggle = document.getElementById("timerToggle");
+      const hintsToggle = document.getElementById("hintsToggle");
+      const startBtn = document.getElementById("startBtn");
+      const shuffleBtn = document.getElementById("shuffleBtn");
+      const previewBtn = document.getElementById("previewBtn");
+      const checkBtn = document.getElementById("checkBtn");
+      const puzzleBoard = document.getElementById("puzzleBoard");
+      const boardWrap = document.getElementById("boardWrap");
+      const hintOverlay = document.getElementById("hintOverlay");
+      const emptyState = document.getElementById("emptyState");
+      const timeDisplay = document.getElementById("timeDisplay");
+      const moveDisplay = document.getElementById("moveDisplay");
+      const correctDisplay = document.getElementById("correctDisplay");
+      const winModal = document.getElementById("winModal");
+      const finalTime = document.getElementById("finalTime");
+      const finalMoves = document.getElementById("finalMoves");
+      const playAgainBtn = document.getElementById("playAgainBtn");
+
+      let imageURL = "";
+      let gridRows = 3;
+      let gridCols = 3;
+      let pieces = [];
+      let moveCount = 0;
+      let elapsedSeconds = 0;
+      let timerId = null;
+      let gameStarted = false;
+      let dragSourceIndex = null;
+      let hintTimeout = null;
+      let lastTap = { index: -1, time: 0 };
+
+      function formatTime(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+        const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+        return `${minutes}:${seconds}`;
+      }
+
+      function updateStats() {
+        timeDisplay.textContent = timerToggle.checked ? formatTime(elapsedSeconds) : "Off";
+        moveDisplay.textContent = moveCount;
+        const correct = pieces.filter((piece, index) => piece.correctIndex === index && piece.rotation % 360 === 0).length;
+        correctDisplay.textContent = `${correct} / ${gridRows * gridCols}`;
+      }
+
+      function stopTimer() {
+        if (timerId) {
+          clearInterval(timerId);
+          timerId = null;
+        }
+      }
+
+      function startTimer() {
+        stopTimer();
+        if (!timerToggle.checked) {
+          timeDisplay.textContent = "Off";
+          return;
+        }
+        timerId = setInterval(() => {
+          elapsedSeconds += 1;
+          timeDisplay.textContent = formatTime(elapsedSeconds);
+        }, 1000);
+      }
+
+      function fisherYates(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function isSolvedArrangement(arr) {
+        return arr.every((piece, index) => piece.correctIndex === index && piece.rotation % 360 === 0);
+      }
+
+      function createShuffledPieces() {
+        const count = gridRows * gridCols;
+        const source = Array.from({ length: count }, (_, index) => ({
+          correctIndex: index,
+          rotation: rotationToggle.checked ? [0, 90, 180, 270][Math.floor(Math.random() * 4)] : 0
+        }));
+
+        do {
+          fisherYates(source);
+        } while (isSolvedArrangement(source));
+
+        return source;
+      }
+
+      function renderBoard() {
+        puzzleBoard.innerHTML = "";
+        puzzleBoard.style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
+        puzzleBoard.style.gridTemplateRows = `repeat(${gridRows}, 1fr)`;
+
+        pieces.forEach((piece, boardIndex) => {
+          const originalRow = Math.floor(piece.correctIndex / gridCols);
+          const originalCol = piece.correctIndex % gridCols;
+
+          const pieceEl = document.createElement("div");
+          pieceEl.className = "piece";
+          pieceEl.dataset.index = boardIndex;
+          pieceEl.draggable = true;
+          pieceEl.tabIndex = 0;
+          pieceEl.setAttribute("role", "button");
+          pieceEl.setAttribute("aria-label", `Puzzle piece ${boardIndex + 1}`);
+
+          const imageEl = document.createElement("div");
+          imageEl.className = "piece-image";
+          imageEl.style.backgroundImage = `url("${imageURL}")`;
+          imageEl.style.backgroundSize = `${gridCols * 100}% ${gridRows * 100}%`;
+          imageEl.style.backgroundPosition = `${gridCols === 1 ? 0 : originalCol * 100 / (gridCols - 1)}% ${gridRows === 1 ? 0 : originalRow * 100 / (gridRows - 1)}%`;
+          imageEl.style.transform = `rotate(${piece.rotation}deg)`;
+          pieceEl.appendChild(imageEl);
+
+          if (rotationToggle.checked) {
+            const rotateBtn = document.createElement("button");
+            rotateBtn.type = "button";
+            rotateBtn.className = "rotate-piece-btn";
+            rotateBtn.textContent = "↻";
+            rotateBtn.title = "Rotate this piece 90 degrees";
+            rotateBtn.setAttribute("aria-label", `Rotate puzzle piece ${boardIndex + 1} by 90 degrees`);
+            rotateBtn.draggable = false;
+            rotateBtn.addEventListener("pointerdown", event => event.stopPropagation());
+            rotateBtn.addEventListener("dragstart", event => event.preventDefault());
+            rotateBtn.addEventListener("click", event => {
+              event.preventDefault();
+              event.stopPropagation();
+              rotatePiece(boardIndex);
+            });
+            pieceEl.appendChild(rotateBtn);
+
+            if (piece.rotation % 360 !== 0) {
+              const angle = document.createElement("span");
+              angle.className = "rotation-angle";
+              angle.textContent = `${piece.rotation}°`;
+              pieceEl.appendChild(angle);
+            }
+          }
+
+          pieceEl.addEventListener("dragstart", handleDragStart);
+          pieceEl.addEventListener("dragover", handleDragOver);
+          pieceEl.addEventListener("dragleave", handleDragLeave);
+          pieceEl.addEventListener("drop", handleDrop);
+          pieceEl.addEventListener("dragend", clearDragStyles);
+          pieceEl.addEventListener("dblclick", () => rotatePiece(boardIndex));
+          pieceEl.addEventListener("keydown", (event) => {
+            if ((event.key === "Enter" || event.key === " ") && rotationToggle.checked) {
+              event.preventDefault();
+              rotatePiece(boardIndex);
+            }
+          });
+
+          puzzleBoard.appendChild(pieceEl);
+        });
+
+        updateGridInfo(rowsInput);
+      updateStats();
+      }
+
+      function handleDragStart(event) {
+        dragSourceIndex = Number(event.currentTarget.dataset.index);
+        event.currentTarget.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", String(dragSourceIndex));
+      }
+
+      function handleDragOver(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        event.currentTarget.classList.add("drop-target");
+      }
+
+      function handleDragLeave(event) {
+        event.currentTarget.classList.remove("drop-target");
+      }
+
+      function handleDrop(event) {
+        event.preventDefault();
+        const targetIndex = Number(event.currentTarget.dataset.index);
+        event.currentTarget.classList.remove("drop-target");
+
+        if (dragSourceIndex === null || dragSourceIndex === targetIndex) return;
+
+        [pieces[dragSourceIndex], pieces[targetIndex]] = [pieces[targetIndex], pieces[dragSourceIndex]];
+        moveCount += 1;
+        renderBoard();
+        checkWin();
+      }
+
+      function clearDragStyles() {
+        document.querySelectorAll(".piece").forEach(el => el.classList.remove("dragging", "drop-target"));
+        dragSourceIndex = null;
+      }
+
+      function handleDoubleTap(event, index) {
+        if (event.pointerType === "mouse") return;
+        const now = Date.now();
+        if (lastTap.index === index && now - lastTap.time < 350) {
+          rotatePiece(index);
+          lastTap = { index: -1, time: 0 };
+        } else {
+          lastTap = { index, time: now };
+        }
+      }
+
+      function rotatePiece(index) {
+        if (!gameStarted || !rotationToggle.checked) return;
+        pieces[index].rotation = (pieces[index].rotation + 90) % 360;
+        moveCount += 1;
+        renderBoard();
+        checkWin();
+      }
+
+      function checkWin() {
+        updateStats();
+        if (!gameStarted || !isSolvedArrangement(pieces)) return;
+
+        gameStarted = false;
+        stopTimer();
+        shuffleBtn.disabled = true;
+        previewBtn.disabled = true;
+        checkBtn.disabled = true;
+        finalTime.textContent = timerToggle.checked ? formatTime(elapsedSeconds) : "Not timed";
+        finalMoves.textContent = moveCount;
+        winModal.classList.add("open");
+        launchConfetti();
+      }
+
+      function startGame() {
+        if (!imageURL) return;
+        gridRows = clampGridValue(rowsInput.value);
+        gridCols = clampGridValue(colsInput.value);
+        rowsInput.value = gridRows;
+        colsInput.value = gridCols;
+        moveCount = 0;
+        elapsedSeconds = 0;
+        gameStarted = true;
+        pieces = createShuffledPieces();
+
+        boardWrap.style.aspectRatio = "1 / 1";
+        hintOverlay.style.backgroundImage = `url("${imageURL}")`;
+        emptyState.style.display = "none";
+        shuffleBtn.disabled = false;
+        previewBtn.disabled = !hintsToggle.checked;
+        checkBtn.disabled = !hintsToggle.checked;
+        renderBoard();
+        startTimer();
+      }
+
+      function shuffleGame() {
+        if (!gameStarted && pieces.length === 0) return;
+        pieces = createShuffledPieces();
+        moveCount = 0;
+        elapsedSeconds = 0;
+        gameStarted = true;
+        renderBoard();
+        startTimer();
+        shuffleBtn.disabled = false;
+        previewBtn.disabled = !hintsToggle.checked;
+        checkBtn.disabled = !hintsToggle.checked;
+      }
+
+      function showPreview() {
+        if (!hintsToggle.checked || !gameStarted) return;
+        clearTimeout(hintTimeout);
+        hintOverlay.classList.add("visible");
+        previewBtn.disabled = true;
+        hintTimeout = setTimeout(() => {
+          hintOverlay.classList.remove("visible");
+          previewBtn.disabled = false;
+        }, 1600);
+      }
+
+      function highlightCorrectPieces() {
+        if (!hintsToggle.checked || !gameStarted) return;
+        const pieceElements = [...document.querySelectorAll(".piece")];
+        pieceElements.forEach((element, index) => {
+          const piece = pieces[index];
+          if (piece.correctIndex === index && piece.rotation % 360 === 0) {
+            element.classList.add("correct");
+          }
+        });
+        checkBtn.disabled = true;
+        setTimeout(() => {
+          pieceElements.forEach(element => element.classList.remove("correct"));
+          checkBtn.disabled = false;
+        }, 1500);
+      }
+
+      function launchConfetti() {
+        const symbols = ["#6c63ff", "#ff9f43", "#23b26d", "#ff5f87", "#37b7ff"];
+        for (let i = 0; i < 70; i++) {
+          const bit = document.createElement("div");
+          bit.className = "confetti";
+          bit.style.left = `${Math.random() * 100}vw`;
+          bit.style.background = symbols[Math.floor(Math.random() * symbols.length)];
+          bit.style.animationDelay = `${Math.random() * .8}s`;
+          bit.style.transform = `rotate(${Math.random() * 360}deg)`;
+          document.body.appendChild(bit);
+          setTimeout(() => bit.remove(), 3600);
+        }
+      }
+
+      imageInput.addEventListener("change", () => {
+        const file = imageInput.files && imageInput.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+          alert("Please select a valid image file.");
+          imageInput.value = "";
+          return;
+        }
+
+        if (imageURL) URL.revokeObjectURL(imageURL);
+        imageURL = URL.createObjectURL(file);
+        uploadName.textContent = file.name;
+        startBtn.disabled = false;
+
+        const img = new Image();
+        img.onload = () => {
+          boardWrap.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+          hintOverlay.style.backgroundImage = `url("${imageURL}")`;
+          emptyState.querySelector("h3").textContent = "Image ready!";
+          emptyState.querySelector("p").innerHTML = "Choose your settings, then press <strong>Start Puzzle</strong>.";
+        };
+        img.src = imageURL;
+      });
+
+      function clampGridValue(value) {
+        const parsed = Number.parseInt(value, 10);
+        if (!Number.isFinite(parsed)) return 3;
+        return Math.min(30, Math.max(2, parsed));
+      }
+
+      function updateGridInfo(source) {
+        let rows = clampGridValue(rowsInput.value);
+        let cols = clampGridValue(colsInput.value);
+
+        if (lockGridToggle.checked) {
+          if (source === rowsInput) cols = rows;
+          if (source === colsInput) rows = cols;
+          rowsInput.value = rows;
+          colsInput.value = cols;
+        }
+
+        const total = rows * cols;
+        pieceCountInfo.textContent = `${total} piece${total === 1 ? "" : "s"} (${rows} × ${cols})`;
+        gridWarning.hidden = total <= 225;
+        correctDisplay.textContent = `0 / ${total}`;
+      }
+
+      rowsInput.addEventListener("input", () => updateGridInfo(rowsInput));
+      colsInput.addEventListener("input", () => updateGridInfo(colsInput));
+      rowsInput.addEventListener("change", () => {
+        rowsInput.value = clampGridValue(rowsInput.value);
+        updateGridInfo(rowsInput);
+      });
+      colsInput.addEventListener("change", () => {
+        colsInput.value = clampGridValue(colsInput.value);
+        updateGridInfo(colsInput);
+      });
+      lockGridToggle.addEventListener("change", () => updateGridInfo(rowsInput));
+
+      timerToggle.addEventListener("change", () => {
+        if (!gameStarted) {
+          timeDisplay.textContent = timerToggle.checked ? formatTime(elapsedSeconds) : "Off";
+          return;
+        }
+        if (timerToggle.checked) {
+          startTimer();
+        } else {
+          stopTimer();
+          timeDisplay.textContent = "Off";
+        }
+      });
+
+      hintsToggle.addEventListener("change", () => {
+        previewBtn.disabled = !hintsToggle.checked || !gameStarted;
+        checkBtn.disabled = !hintsToggle.checked || !gameStarted;
+        if (!hintsToggle.checked) hintOverlay.classList.remove("visible");
+      });
+
+      startBtn.addEventListener("click", startGame);
+      shuffleBtn.addEventListener("click", shuffleGame);
+      previewBtn.addEventListener("click", showPreview);
+      checkBtn.addEventListener("click", highlightCorrectPieces);
+
+      playAgainBtn.addEventListener("click", () => {
+        winModal.classList.remove("open");
+        startGame();
+      });
+
+      winModal.addEventListener("click", (event) => {
+        if (event.target === winModal) winModal.classList.remove("open");
+      });
+
+      window.addEventListener("beforeunload", () => {
+        if (imageURL) URL.revokeObjectURL(imageURL);
+      });
+
+      updateStats();
+    })();
+  </script>
+</body>
+</html>

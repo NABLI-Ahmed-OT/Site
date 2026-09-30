@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101827" />
+  <title>Motion Rock Paper Scissors</title>
+
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111c30;
+      --panel-2: #17243b;
+      --text: #f5f7fb;
+      --muted: #aab5c6;
+      --accent: #36d399;
+      --danger: #fb7185;
+      --warning: #fbbf24;
+      --line: rgba(255,255,255,.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background:
+        radial-gradient(circle at top, #172a46 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      width: min(100%, 720px);
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top))
+               16px
+               max(20px, env(safe-area-inset-bottom));
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.55rem, 6vw, 2.25rem);
+      text-align: center;
+    }
+
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+      text-align: center;
+      font-size: .95rem;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .score {
+      padding: 10px 8px;
+      background: rgba(17, 28, 48, .9);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      text-align: center;
+    }
+
+    .score strong {
+      display: block;
+      font-size: 1.5rem;
+    }
+
+    .score span {
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .camera-card {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 3 / 4;
+      max-height: 62dvh;
+      background: #05080d;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35);
+    }
+
+    video,
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    video { opacity: .92; }
+
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px;
+      pointer-events: none;
+    }
+
+    .status {
+      align-self: center;
+      max-width: 95%;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(3, 7, 18, .75);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+      text-align: center;
+      font-size: .88rem;
+    }
+
+    .gesture-display {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(3, 7, 18, .78);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+
+    .choice {
+      text-align: center;
+      min-width: 0;
+    }
+
+    .choice .emoji {
+      display: block;
+      font-size: 2.35rem;
+      line-height: 1;
+    }
+
+    .choice .label {
+      display: block;
+      margin-top: 4px;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+
+    .versus {
+      color: var(--muted);
+      font-weight: 800;
+      font-size: .8rem;
+    }
+
+    .result {
+      margin: 12px 0 0;
+      min-height: 54px;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+      text-align: center;
+      font-size: 1.15rem;
+      font-weight: 800;
+      background: rgba(17, 28, 48, .92);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .result.win { border-color: var(--accent); color: var(--accent); }
+    .result.lose { border-color: var(--danger); color: var(--danger); }
+    .result.draw { border-color: var(--warning); color: var(--warning); }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      min-height: 50px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .primary {
+      color: #032116;
+      background: var(--accent);
+    }
+
+    .secondary {
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    details {
+      margin-top: 12px;
+      padding: 12px 14px;
+      color: var(--muted);
+      background: rgba(17, 28, 48, .8);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      font-size: .88rem;
+    }
+
+    summary {
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .fallback {
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .fallback button {
+      min-height: 58px;
+      font-size: 1.4rem;
+    }
+
+    .fallback.visible { display: grid; }
+
+    @media (orientation: landscape) and (max-height: 600px) {
+      .app { width: min(100%, 920px); }
+      .camera-card { aspect-ratio: 16 / 9; max-height: 66dvh; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <h1>Rock Paper Scissors</h1>
+    <p class="subtitle">Show your hand to the camera, then hold the gesture steady.</p>
+
+    <section class="scoreboard" aria-label="Score">
+      <div class="score"><strong id="playerScore">0</strong><span>You</span></div>
+      <div class="score"><strong id="drawScore">0</strong><span>Draws</span></div>
+      <div class="score"><strong id="computerScore">0</strong><span>Computer</span></div>
+    </section>
+
+    <section class="camera-card">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="canvas"></canvas>
+
+      <div class="camera-overlay">
+        <div id="status" class="status">Tap “Start camera” to begin</div>
+
+        <div class="gesture-display">
+          <div class="choice">
+            <span id="playerEmoji" class="emoji">❔</span>
+            <span id="playerChoice" class="label">Your gesture</span>
+          </div>
+          <div class="versus">VS</div>
+          <div class="choice">
+            <span id="computerEmoji" class="emoji">🤖</span>
+            <span id="computerChoice" class="label">Computer</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="result" class="result">Ready to play</div>
+
+    <section class="controls">
+      <button id="startBtn" class="primary">Start camera</button>
+      <button id="resetBtn" class="secondary">Reset score</button>
+    </section>
+
+    <section id="fallback" class="fallback" aria-label="Touch controls">
+      <button class="secondary fallback-btn" data-choice="rock">✊</button>
+      <button class="secondary fallback-btn" data-choice="paper">✋</button>
+      <button class="secondary fallback-btn" data-choice="scissors">✌️</button>
+    </section>
+
+    <details>
+      <summary>How to play</summary>
+      <p>
+        Hold ✊ for rock, ✋ for paper, or ✌️ for scissors. Keep the gesture visible
+        for about one second. For best results, use good lighting and keep one hand
+        fully inside the camera frame.
+      </p>
+      <p>
+        Camera access usually requires HTTPS or localhost. A touch fallback appears
+        if the camera or hand-recognition library cannot start.
+      </p>
+    </details>
+  </main>
+
+  <!-- MediaPipe Hands -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <script>
+    "use strict";
+
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const fallback = document.getElementById("fallback");
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+
+    const playerEmoji = document.getElementById("playerEmoji");
+    const playerChoiceEl = document.getElementById("playerChoice");
+    const computerEmoji = document.getElementById("computerEmoji");
+    const computerChoiceEl = document.getElementById("computerChoice");
+
+    const playerScoreEl = document.getElementById("playerScore");
+    const drawScoreEl = document.getElementById("drawScore");
+    const computerScoreEl = document.getElementById("computerScore");
+
+    const EMOJI = {
+      rock: "✊",
+      paper: "✋",
+      scissors: "✌️",
+      unknown: "❔"
+    };
+
+    let scores = { player: 0, computer: 0, draws: 0 };
+    let camera = null;
+    let hands = null;
+    let lastDetectedGesture = "unknown";
+    let stableSince = 0;
+    let roundLocked = false;
+    const HOLD_TIME_MS = 850;
+    const ROUND_COOLDOWN_MS = 1600;
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function updateScores() {
+      playerScoreEl.textContent = scores.player;
+      drawScoreEl.textContent = scores.draws;
+      computerScoreEl.textContent = scores.computer;
+    }
+
+    function showFallback(message) {
+      fallback.classList.add("visible");
+      setStatus(message || "Use the touch buttons below");
+    }
+
+    function fingerExtended(landmarks, tip, pip, mcp) {
+      const wrist = landmarks[0];
+      const tipPoint = landmarks[tip];
+      const pipPoint = landmarks[pip];
+      const mcpPoint = landmarks[mcp];
+
+      const tipToWrist = distance(tipPoint, wrist);
+      const pipToWrist = distance(pipPoint, wrist);
+      const mcpToWrist = distance(mcpPoint, wrist);
+
+      return tipToWrist > pipToWrist * 1.06 &&
+             tipToWrist > mcpToWrist * 1.18;
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function recognizeGesture(landmarks) {
+      // Index, middle, ring, little fingers.
+      const index = fingerExtended(landmarks, 8, 6, 5);
+      const middle = fingerExtended(landmarks, 12, 10, 9);
+      const ring = fingerExtended(landmarks, 16, 14, 13);
+      const pinky = fingerExtended(landmarks, 20, 18, 17);
+
+      const extendedCount = [index, middle, ring, pinky].filter(Boolean).length;
+
+      if (extendedCount === 0) return "rock";
+      if (index && middle && ring && pinky) return "paper";
+      if (index && middle && !ring && !pinky) return "scissors";
+
+      return "unknown";
+    }
+
+    function playRound(playerChoice) {
+      if (roundLocked || playerChoice === "unknown") return;
+
+      roundLocked = true;
+
+      const choices = ["rock", "paper", "scissors"];
+      const computerChoice = choices[Math.floor(Math.random() * choices.length)];
+
+      playerEmoji.textContent = EMOJI[playerChoice];
+      playerChoiceEl.textContent =
+        playerChoice.charAt(0).toUpperCase() + playerChoice.slice(1);
+
+      computerEmoji.textContent = EMOJI[computerChoice];
+      computerChoiceEl.textContent =
+        computerChoice.charAt(0).toUpperCase() + computerChoice.slice(1);
+
+      let outcome = "draw";
+
+      if (playerChoice === computerChoice) {
+        scores.draws++;
+        resultEl.textContent = "Draw!";
+      } else if (
+        (playerChoice === "rock" && computerChoice === "scissors") ||
+        (playerChoice === "paper" && computerChoice === "rock") ||
+        (playerChoice === "scissors" && computerChoice === "paper")
+      ) {
+        scores.player++;
+        outcome = "win";
+        resultEl.textContent = "You win!";
+      } else {
+        scores.computer++;
+        outcome = "lose";
+        resultEl.textContent = "Computer wins!";
+      }
+
+      resultEl.className = "result " + outcome;
+      updateScores();
+      setStatus("New round starting…");
+
+      if (navigator.vibrate) {
+        navigator.vibrate(outcome === "win" ? [70, 40, 70] : 70);
+      }
+
+      setTimeout(() => {
+        roundLocked = false;
+        lastDetectedGesture = "unknown";
+        stableSince = 0;
+        setStatus("Show rock, paper, or scissors");
+      }, ROUND_COOLDOWN_MS);
+    }
+
+    function resizeCanvas() {
+      const width = video.videoWidth || 720;
+      const height = video.videoHeight || 1280;
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    }
+
+    function onResults(results) {
+      resizeCanvas();
+
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+      let gesture = "unknown";
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+
+        drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+          color: "#36d399",
+          lineWidth: 4
+        });
+
+        drawLandmarks(ctx, landmarks, {
+          color: "#ffffff",
+          lineWidth: 2,
+          radius: 3
+        });
+
+        gesture = recognizeGesture(landmarks);
+      }
+
+      ctx.restore();
+
+      if (roundLocked) return;
+
+      if (gesture === "unknown") {
+        lastDetectedGesture = "unknown";
+        stableSince = 0;
+        playerEmoji.textContent = "❔";
+        playerChoiceEl.textContent = "Show a clear gesture";
+        setStatus("Keep one hand fully visible");
+        return;
+      }
+
+      playerEmoji.textContent = EMOJI[gesture];
+      playerChoiceEl.textContent =
+        gesture.charAt(0).toUpperCase() + gesture.slice(1);
+
+      if (gesture !== lastDetectedGesture) {
+        lastDetectedGesture = gesture;
+        stableSince = performance.now();
+        setStatus("Hold " + gesture + " steady…");
+        return;
+      }
+
+      const heldFor = performance.now() - stableSince;
+      const remaining = Math.max(0, HOLD_TIME_MS - heldFor);
+
+      if (remaining > 0) {
+        setStatus("Hold steady… " + Math.ceil(remaining / 100) / 10 + "s");
+      } else {
+        playRound(gesture);
+      }
+    }
+
+    async function startCamera() {
+      startBtn.disabled = true;
+      setStatus("Loading hand recognition…");
+
+      try {
+        if (!window.Hands || !window.Camera) {
+          throw new Error("Hand-recognition library did not load.");
+        }
+
+        hands = new Hands({
+          locateFile: file =>
+            "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" + file
+        });
+
+        hands.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.65,
+          minTrackingConfidence: 0.65
+        });
+
+        hands.onResults(onResults);
+
+        camera = new Camera(video, {
+          onFrame: async () => {
+            if (hands) {
+              await hands.send({ image: video });
+            }
+          },
+          width: 720,
+          height: 1280,
+          facingMode: "user"
+        });
+
+        await camera.start();
+
+        startBtn.textContent = "Camera active";
+        setStatus("Show rock, paper, or scissors");
+      } catch (error) {
+        console.error(error);
+        startBtn.disabled = false;
+        startBtn.textContent = "Try camera again";
+        showFallback(
+          "Camera unavailable. Allow camera permission or use touch controls."
+        );
+      }
+    }
+
+    startBtn.addEventListener("click", startCamera);
+
+    resetBtn.addEventListener("click", () => {
+      scores = { player: 0, computer: 0, draws: 0 };
+      updateScores();
+
+      playerEmoji.textContent = "❔";
+      playerChoiceEl.textContent = "Your gesture";
+      computerEmoji.textContent = "🤖";
+      computerChoiceEl.textContent = "Computer";
+
+      resultEl.textContent = "Score reset";
+      resultEl.className = "result";
+    });
+
+    document.querySelectorAll(".fallback-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        playRound(button.dataset.choice);
+      });
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (camera && typeof camera.stop === "function") camera.stop();
+    });
+  </script>
+</body>
+</html>

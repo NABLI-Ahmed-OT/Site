@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#10233a" />
+  <title>Hand-Controlled Flying Bird</title>
+
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: #11233a;
+      --panel2: #17314f;
+      --text: #f7fbff;
+      --muted: #a9bad0;
+      --accent: #43d69d;
+      --danger: #ff6b7d;
+      --line: rgba(255,255,255,.13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      color: var(--text);
+      background: radial-gradient(circle at top, #183c64 0%, var(--bg) 62%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      width: min(100%, 760px);
+      margin: 0 auto;
+      padding:
+        max(14px, env(safe-area-inset-top))
+        14px
+        max(20px, env(safe-area-inset-bottom));
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      text-align: center;
+      font-size: clamp(1.45rem, 5vw, 2.2rem);
+    }
+
+    .subtitle {
+      margin: 0 0 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .metric {
+      padding: 9px 8px;
+      text-align: center;
+      background: rgba(17,35,58,.9);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.35rem;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+    .game-wrap {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 3 / 4;
+      max-height: 68dvh;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #78c9ff;
+      box-shadow: 0 18px 45px rgba(0,0,0,.35);
+      touch-action: none;
+    }
+
+    #gameCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #video {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      width: 28%;
+      max-width: 150px;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,.75);
+      border-radius: 12px;
+      transform: scaleX(-1);
+      opacity: .82;
+      z-index: 3;
+      background: #02060b;
+    }
+
+    #handCanvas {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      width: 28%;
+      max-width: 150px;
+      aspect-ratio: 3 / 4;
+      border-radius: 12px;
+      transform: scaleX(-1);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px;
+      pointer-events: none;
+    }
+
+    .status {
+      align-self: center;
+      max-width: 92%;
+      padding: 8px 12px;
+      text-align: center;
+      border-radius: 999px;
+      background: rgba(4,12,24,.72);
+      border: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(7px);
+      font-size: .84rem;
+    }
+
+    .message {
+      align-self: center;
+      max-width: 92%;
+      padding: 12px 16px;
+      text-align: center;
+      border-radius: 15px;
+      background: rgba(4,12,24,.78);
+      border: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(7px);
+      font-weight: 800;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 11px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      min-height: 50px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .primary {
+      color: #032116;
+      background: var(--accent);
+    }
+
+    .secondary {
+      color: var(--text);
+      background: var(--panel2);
+      border: 1px solid var(--line);
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .settings {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 12px;
+      background: rgba(17,35,58,.85);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .setting-row {
+      display: grid;
+      grid-template-columns: 105px 1fr 44px;
+      gap: 10px;
+      align-items: center;
+      font-size: .86rem;
+    }
+
+    .setting-row label { color: var(--muted); }
+
+    input[type="range"] { width: 100%; }
+
+    .hint {
+      margin: 10px 2px 0;
+      color: var(--muted);
+      text-align: center;
+      font-size: .82rem;
+    }
+
+    @media (orientation: landscape) and (max-height: 620px) {
+      .app { width: min(100%, 960px); }
+      .game-wrap { aspect-ratio: 16 / 9; max-height: 70dvh; }
+      #video, #handCanvas { width: 18%; aspect-ratio: 4 / 3; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <h1>Hand-Controlled Flying Bird</h1>
+    <p class="subtitle">Move your hand up and down to fly through the gaps.</p>
+
+    <section class="topbar" aria-label="Game statistics">
+      <div class="metric"><strong id="score">0</strong><span>Score</span></div>
+      <div class="metric"><strong id="best">0</strong><span>Best</span></div>
+      <div class="metric"><strong id="speedValue">1.0×</strong><span>Speed</span></div>
+    </section>
+
+    <section id="gameWrap" class="game-wrap">
+      <canvas id="gameCanvas"></canvas>
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="handCanvas"></canvas>
+
+      <div class="overlay">
+        <div id="status" class="status">Tap Start camera</div>
+        <div id="message" class="message">Start the camera, then press Play</div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button id="cameraBtn" class="primary" type="button">Start camera</button>
+      <button id="playBtn" class="secondary" type="button">Play</button>
+    </section>
+
+    <section class="settings">
+      <div class="setting-row">
+        <label for="speedSlider">Game speed</label>
+        <input id="speedSlider" type="range" min="0.7" max="1.7" value="1" step="0.1" />
+        <span id="speedLabel">1.0×</span>
+      </div>
+
+      <div class="setting-row">
+        <label for="gapSlider">Gap size</label>
+        <input id="gapSlider" type="range" min="130" max="230" value="180" step="10" />
+        <span id="gapLabel">180</span>
+      </div>
+    </section>
+
+    <p class="hint">
+      Camera control: move one hand vertically. Touch fallback: drag your finger up or down inside the game.
+    </p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <script>
+    "use strict";
+
+    const gameCanvas = document.getElementById("gameCanvas");
+    const g = gameCanvas.getContext("2d");
+
+    const video = document.getElementById("video");
+    const handCanvas = document.getElementById("handCanvas");
+    const hctx = handCanvas.getContext("2d");
+
+    const gameWrap = document.getElementById("gameWrap");
+    const statusEl = document.getElementById("status");
+    const messageEl = document.getElementById("message");
+
+    const cameraBtn = document.getElementById("cameraBtn");
+    const playBtn = document.getElementById("playBtn");
+
+    const scoreEl = document.getElementById("score");
+    const bestEl = document.getElementById("best");
+    const speedValueEl = document.getElementById("speedValue");
+
+    const speedSlider = document.getElementById("speedSlider");
+    const gapSlider = document.getElementById("gapSlider");
+    const speedLabel = document.getElementById("speedLabel");
+    const gapLabel = document.getElementById("gapLabel");
+
+    let hands = null;
+    let camera = null;
+    let cameraReady = false;
+
+    let running = false;
+    let lastTime = 0;
+    let score = 0;
+    let best = 0;
+    let speedMultiplier = 1;
+    let gapSize = 180;
+
+    let handDetected = false;
+    let handYNormalized = 0.5;
+    let smoothedHandY = 0.5;
+    let touchControl = false;
+
+    const bird = {
+      x: 110,
+      y: 260,
+      targetY: 260,
+      radius: 18
+    };
+
+    let obstacles = [];
+    let spawnTimer = 0;
+    const obstacleWidth = 64;
+    const baseObstacleSpeed = 175;
+    const spawnInterval = 1450;
+
+    function resizeGame() {
+      const rect = gameWrap.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      gameCanvas.width = Math.round(rect.width * dpr);
+      gameCanvas.height = Math.round(rect.height * dpr);
+      gameCanvas.style.width = rect.width + "px";
+      gameCanvas.style.height = rect.height + "px";
+
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      bird.x = Math.max(76, rect.width * 0.22);
+
+      if (!running) {
+        bird.y = rect.height * 0.5;
+        bird.targetY = bird.y;
+      }
+    }
+
+    function resizeHandCanvas() {
+      const width = video.videoWidth || 480;
+      const height = video.videoHeight || 640;
+      handCanvas.width = width;
+      handCanvas.height = height;
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function setMessage(text, visible = true) {
+      messageEl.textContent = text;
+      messageEl.style.display = visible ? "block" : "none";
+    }
+
+    function resetGame() {
+      const rect = gameWrap.getBoundingClientRect();
+
+      score = 0;
+      spawnTimer = 0;
+      obstacles = [];
+
+      bird.x = Math.max(76, rect.width * 0.22);
+      bird.y = rect.height * 0.5;
+      bird.targetY = bird.y;
+
+      scoreEl.textContent = "0";
+    }
+
+    function startGame() {
+      resetGame();
+      running = true;
+      lastTime = performance.now();
+      playBtn.textContent = "Restart";
+      setMessage("", false);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver() {
+      running = false;
+
+      if (score > best) {
+        best = score;
+        bestEl.textContent = best;
+      }
+
+      setMessage("Game over — Score: " + score + ". Press Restart.");
+      playBtn.textContent = "Restart";
+
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 120]);
+      }
+    }
+
+    function spawnObstacle() {
+      const rect = gameWrap.getBoundingClientRect();
+      const margin = 70;
+      const halfGap = gapSize / 2;
+      const minCenter = margin + halfGap;
+      const maxCenter = rect.height - margin - halfGap;
+      const gapCenter = minCenter + Math.random() * Math.max(1, maxCenter - minCenter);
+
+      obstacles.push({
+        x: rect.width + 20,
+        gapCenter,
+        passed: false
+      });
+    }
+
+    function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
+      const closestX = Math.max(rx, Math.min(cx, rx + rw));
+      const closestY = Math.max(ry, Math.min(cy, ry + rh));
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return dx * dx + dy * dy < radius * radius;
+    }
+
+    function update(dt) {
+      const rect = gameWrap.getBoundingClientRect();
+
+      if (handDetected && !touchControl) {
+        smoothedHandY += (handYNormalized - smoothedHandY) * 0.18;
+        bird.targetY = smoothedHandY * rect.height;
+      }
+
+      bird.targetY = Math.max(bird.radius + 6, Math.min(rect.height - bird.radius - 6, bird.targetY));
+      bird.y += (bird.targetY - bird.y) * Math.min(1, dt * 10);
+
+      spawnTimer += dt * 1000;
+
+      if (spawnTimer >= spawnInterval / speedMultiplier) {
+        spawnTimer = 0;
+        spawnObstacle();
+      }
+
+      const obstacleSpeed = baseObstacleSpeed * speedMultiplier;
+
+      obstacles.forEach(obstacle => {
+        obstacle.x -= obstacleSpeed * dt;
+
+        if (!obstacle.passed && obstacle.x + obstacleWidth < bird.x) {
+          obstacle.passed = true;
+          score++;
+          scoreEl.textContent = score;
+
+          if (navigator.vibrate) {
+            navigator.vibrate(25);
+          }
+        }
+      });
+
+      obstacles = obstacles.filter(obstacle => obstacle.x + obstacleWidth > -20);
+
+      for (const obstacle of obstacles) {
+        const gapTop = obstacle.gapCenter - gapSize / 2;
+        const gapBottom = obstacle.gapCenter + gapSize / 2;
+
+        const hitTop = circleRectCollision(
+          bird.x, bird.y, bird.radius,
+          obstacle.x, 0, obstacleWidth, gapTop
+        );
+
+        const hitBottom = circleRectCollision(
+          bird.x, bird.y, bird.radius,
+          obstacle.x, gapBottom, obstacleWidth, rect.height - gapBottom
+        );
+
+        if (hitTop || hitBottom) {
+          gameOver();
+          return;
+        }
+      }
+
+      if (bird.y - bird.radius <= 0 || bird.y + bird.radius >= rect.height) {
+        gameOver();
+      }
+    }
+
+    function drawBackground(width, height, time) {
+      const sky = g.createLinearGradient(0, 0, 0, height);
+      sky.addColorStop(0, "#70c7ff");
+      sky.addColorStop(1, "#d8f3ff");
+      g.fillStyle = sky;
+      g.fillRect(0, 0, width, height);
+
+      g.fillStyle = "rgba(255,255,255,.75)";
+
+      for (let i = 0; i < 5; i++) {
+        const x = ((i * 190 - time * 0.015) % (width + 220)) - 80;
+        const y = 60 + (i % 3) * 92;
+
+        g.beginPath();
+        g.arc(x, y, 24, 0, Math.PI * 2);
+        g.arc(x + 28, y - 8, 31, 0, Math.PI * 2);
+        g.arc(x + 62, y, 24, 0, Math.PI * 2);
+        g.fill();
+      }
+
+      g.fillStyle = "#79bd62";
+      g.beginPath();
+      g.moveTo(0, height);
+      for (let x = 0; x <= width; x += 55) {
+        const y = height - 30 - Math.sin((x + time * 0.02) * 0.018) * 16;
+        g.lineTo(x, y);
+      }
+      g.lineTo(width, height);
+      g.closePath();
+      g.fill();
+    }
+
+    function drawObstacle(obstacle, height) {
+      const gapTop = obstacle.gapCenter - gapSize / 2;
+      const gapBottom = obstacle.gapCenter + gapSize / 2;
+
+      const pipeGradient = g.createLinearGradient(
+        obstacle.x,
+        0,
+        obstacle.x + obstacleWidth,
+        0
+      );
+
+      pipeGradient.addColorStop(0, "#258d49");
+      pipeGradient.addColorStop(.5, "#55ce72");
+      pipeGradient.addColorStop(1, "#1f743e");
+
+      g.fillStyle = pipeGradient;
+      g.strokeStyle = "#155a31";
+      g.lineWidth = 3;
+
+      g.fillRect(obstacle.x, 0, obstacleWidth, gapTop);
+      g.strokeRect(obstacle.x, 0, obstacleWidth, gapTop);
+
+      g.fillRect(obstacle.x, gapBottom, obstacleWidth, height - gapBottom);
+      g.strokeRect(obstacle.x, gapBottom, obstacleWidth, height - gapBottom);
+
+      g.fillRect(obstacle.x - 6, gapTop - 24, obstacleWidth + 12, 24);
+      g.strokeRect(obstacle.x - 6, gapTop - 24, obstacleWidth + 12, 24);
+
+      g.fillRect(obstacle.x - 6, gapBottom, obstacleWidth + 12, 24);
+      g.strokeRect(obstacle.x - 6, gapBottom, obstacleWidth + 12, 24);
+    }
+
+    function drawBird(time) {
+      const bob = Math.sin(time * 0.012) * 2;
+
+      g.save();
+      g.translate(bird.x, bird.y + bob);
+
+      g.fillStyle = "#ffd84d";
+      g.strokeStyle = "#8f5d00";
+      g.lineWidth = 3;
+
+      g.beginPath();
+      g.arc(0, 0, bird.radius, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+
+      g.fillStyle = "#ffae34";
+      g.beginPath();
+      g.ellipse(-7, 4, 10, 7, -.35, 0, Math.PI * 2);
+      g.fill();
+
+      g.fillStyle = "#ffffff";
+      g.beginPath();
+      g.arc(7, -6, 6, 0, Math.PI * 2);
+      g.fill();
+
+      g.fillStyle = "#111827";
+      g.beginPath();
+      g.arc(9, -6, 2.5, 0, Math.PI * 2);
+      g.fill();
+
+      g.fillStyle = "#ff7a32";
+      g.beginPath();
+      g.moveTo(16, -1);
+      g.lineTo(29, 4);
+      g.lineTo(16, 8);
+      g.closePath();
+      g.fill();
+
+      g.restore();
+    }
+
+    function draw(time) {
+      const rect = gameWrap.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      g.clearRect(0, 0, width, height);
+      drawBackground(width, height, time);
+
+      obstacles.forEach(obstacle => drawObstacle(obstacle, height));
+      drawBird(time);
+    }
+
+    function gameLoop(time) {
+      if (!running) {
+        draw(time);
+        return;
+      }
+
+      const dt = Math.min((time - lastTime) / 1000, 0.034);
+      lastTime = time;
+
+      update(dt);
+      draw(time);
+
+      if (running) {
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    function onHandResults(results) {
+      resizeHandCanvas();
+
+      hctx.save();
+      hctx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+
+        handDetected = true;
+
+        const wrist = landmarks[0];
+        const middleMcp = landmarks[9];
+        handYNormalized = Math.max(
+          0,
+          Math.min(1, (wrist.y + middleMcp.y) / 2)
+        );
+
+        drawConnectors(hctx, landmarks, HAND_CONNECTIONS, {
+          color: "#43d69d",
+          lineWidth: 4
+        });
+
+        drawLandmarks(hctx, landmarks, {
+          color: "#ffffff",
+          radius: 3
+        });
+
+        setStatus("Hand detected — move up or down");
+      } else {
+        handDetected = false;
+        setStatus(cameraReady ? "Show one hand to the camera" : "Tap Start camera");
+      }
+
+      hctx.restore();
+    }
+
+    async function startCamera() {
+      cameraBtn.disabled = true;
+      setStatus("Loading hand tracking…");
+
+      try {
+        if (!window.Hands || !window.Camera) {
+          throw new Error("Hand tracking library unavailable.");
+        }
+
+        hands = new Hands({
+          locateFile: file =>
+            "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" + file
+        });
+
+        hands.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.65,
+          minTrackingConfidence: 0.65
+        });
+
+        hands.onResults(onHandResults);
+
+        camera = new Camera(video, {
+          onFrame: async () => {
+            if (hands) {
+              await hands.send({ image: video });
+            }
+          },
+          width: 480,
+          height: 640,
+          facingMode: "user"
+        });
+
+        await camera.start();
+
+        cameraReady = true;
+        cameraBtn.textContent = "Camera active";
+        setStatus("Show one hand to the camera");
+        setMessage("Press Play when ready");
+      } catch (error) {
+        console.error(error);
+        cameraBtn.disabled = false;
+        cameraBtn.textContent = "Try camera again";
+        setStatus("Camera unavailable — use touch control");
+        setMessage("Drag your finger vertically inside the game, then press Play");
+      }
+    }
+
+    function setTouchY(clientY) {
+      const rect = gameWrap.getBoundingClientRect();
+      const y = clientY - rect.top;
+      bird.targetY = Math.max(
+        bird.radius + 6,
+        Math.min(rect.height - bird.radius - 6, y)
+      );
+    }
+
+    gameWrap.addEventListener("pointerdown", event => {
+      touchControl = true;
+      gameWrap.setPointerCapture(event.pointerId);
+      setTouchY(event.clientY);
+    });
+
+    gameWrap.addEventListener("pointermove", event => {
+      if (touchControl) {
+        setTouchY(event.clientY);
+      }
+    });
+
+    gameWrap.addEventListener("pointerup", event => {
+      touchControl = false;
+      if (gameWrap.hasPointerCapture(event.pointerId)) {
+        gameWrap.releasePointerCapture(event.pointerId);
+      }
+    });
+
+    gameWrap.addEventListener("pointercancel", () => {
+      touchControl = false;
+    });
+
+    cameraBtn.addEventListener("click", startCamera);
+    playBtn.addEventListener("click", startGame);
+
+    speedSlider.addEventListener("input", () => {
+      speedMultiplier = Number(speedSlider.value);
+      const label = speedMultiplier.toFixed(1) + "×";
+      speedLabel.textContent = label;
+      speedValueEl.textContent = label;
+    });
+
+    gapSlider.addEventListener("input", () => {
+      gapSize = Number(gapSlider.value);
+      gapLabel.textContent = String(gapSize);
+    });
+
+    window.addEventListener("resize", () => {
+      resizeGame();
+      draw(performance.now());
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (camera && typeof camera.stop === "function") {
+        camera.stop();
+      }
+    });
+
+    resizeGame();
+    draw(performance.now());
+  </script>
+</body>
+</html>

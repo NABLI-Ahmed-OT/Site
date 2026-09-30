@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>Tilt Marble Maze</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: rgba(15, 27, 46, 0.92);
+      --panel-2: rgba(22, 38, 61, 0.9);
+      --text: #f3f7fb;
+      --muted: #9fb0c6;
+      --accent: #70e1b2;
+      --accent-2: #45aaf2;
+      --danger: #ff6b6b;
+      --wall: #dbe8f5;
+      --floor: #0d1b2d;
+      --border: rgba(255,255,255,.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(69,170,242,.20), transparent 42%),
+        linear-gradient(180deg, #0b1728 0%, var(--bg) 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    }
+
+    .app {
+      width: min(100%, 760px);
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .topbar,
+    .controls,
+    .statusbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      margin-right: auto;
+      min-width: 150px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 750;
+      letter-spacing: .02em;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .metric {
+      min-width: 78px;
+      padding: 7px 10px;
+      border-radius: 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: .66rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 2px;
+      font-size: .98rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .board-wrap {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: #050c16;
+      box-shadow: 0 18px 50px rgba(0,0,0,.28);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 9 / 14;
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(3, 9, 17, .70);
+      backdrop-filter: blur(8px);
+      transition: opacity .2s ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .modal {
+      width: min(100%, 380px);
+      padding: 20px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: rgba(13, 27, 45, .96);
+      text-align: center;
+    }
+
+    .modal h2 {
+      margin: 0 0 8px;
+      font-size: 1.35rem;
+    }
+
+    .modal p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: .92rem;
+    }
+
+    button,
+    select,
+    input[type="range"] {
+      font: inherit;
+    }
+
+    button,
+    select {
+      min-height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      background: var(--panel-2);
+    }
+
+    button {
+      padding: 9px 13px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button.primary {
+      color: #03120c;
+      background: var(--accent);
+      border-color: transparent;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    label.control {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: .72rem;
+      min-width: 120px;
+      flex: 1 1 130px;
+    }
+
+    label.control select,
+    label.control input {
+      width: 100%;
+    }
+
+    select { padding: 8px 10px; }
+    input[type="range"] { accent-color: var(--accent); }
+
+    .statusbar {
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .status {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(255,107,107,.10);
+    }
+
+    .dot.active {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(112,225,178,.10);
+    }
+
+    .hint { text-align: right; }
+
+    @media (max-width: 520px) {
+      body { padding-left: 8px; padding-right: 8px; }
+      .topbar { align-items: stretch; }
+      .brand { width: 100%; }
+      .metric { flex: 1; }
+      .controls > button { flex: 1 1 120px; }
+      .hint { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar" aria-label="Game status">
+      <div class="brand">
+        <h1>Tilt Marble Maze</h1>
+        <p>Tilt the phone and guide the marble into the glowing goal.</p>
+      </div>
+      <div class="metric"><span>Maze</span><strong id="levelValue">1</strong></div>
+      <div class="metric"><span>Time</span><strong id="timeValue">0.0 s</strong></div>
+      <div class="metric"><span>Best</span><strong id="bestValue">—</strong></div>
+    </section>
+
+    <section class="board-wrap" id="boardWrap">
+      <canvas id="gameCanvas" aria-label="Tilt-controlled marble maze"></canvas>
+      <div class="overlay" id="startOverlay">
+        <div class="modal">
+          <h2 id="overlayTitle">Ready?</h2>
+          <p id="overlayText">Hold your phone in a comfortable position, then enable motion control. On desktop, use the arrow keys or drag on the maze.</p>
+          <button class="primary" id="startButton" type="button">Enable tilt &amp; start</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Game controls">
+      <button id="calibrateButton" type="button">Calibrate</button>
+      <button id="newMazeButton" type="button">New maze</button>
+      <label class="control">
+        Difficulty
+        <select id="difficultySelect">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
+      <label class="control">
+        Tilt sensitivity <span id="sensitivityValue">1.00×</span>
+        <input id="sensitivityRange" type="range" min="0.45" max="1.8" step="0.05" value="1" />
+      </label>
+    </section>
+
+    <section class="statusbar">
+      <span class="status"><span class="dot" id="sensorDot"></span><span id="sensorStatus">Motion sensor not enabled</span></span>
+      <span class="hint">Touch-drag fallback · Arrow keys supported</span>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const boardWrap = document.getElementById('boardWrap');
+      const startOverlay = document.getElementById('startOverlay');
+      const startButton = document.getElementById('startButton');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayText = document.getElementById('overlayText');
+      const calibrateButton = document.getElementById('calibrateButton');
+      const newMazeButton = document.getElementById('newMazeButton');
+      const difficultySelect = document.getElementById('difficultySelect');
+      const sensitivityRange = document.getElementById('sensitivityRange');
+      const sensitivityValue = document.getElementById('sensitivityValue');
+      const sensorDot = document.getElementById('sensorDot');
+      const sensorStatus = document.getElementById('sensorStatus');
+      const levelValue = document.getElementById('levelValue');
+      const timeValue = document.getElementById('timeValue');
+      const bestValue = document.getElementById('bestValue');
+
+      const settings = {
+        easy: { cols: 8, rows: 12 },
+        medium: { cols: 11, rows: 17 },
+        hard: { cols: 15, rows: 23 }
+      };
+
+      let maze = null;
+      let cols = 11;
+      let rows = 17;
+      let cellSize = 40;
+      let offsetX = 0;
+      let offsetY = 0;
+      let wallThickness = 4;
+      let marbleRadius = 10;
+      let wallRects = [];
+
+      let marble = { x: 0, y: 0, vx: 0, vy: 0 };
+      let startCell = { c: 0, r: 0 };
+      let goalCell = { c: 0, r: 0 };
+      let goalRadius = 14;
+
+      let level = 1;
+      let running = false;
+      let won = false;
+      let runStart = 0;
+      let elapsed = 0;
+      let lastFrame = performance.now();
+
+      let sensorEnabled = false;
+      let hasSensorReading = false;
+      let orientationData = { beta: 0, gamma: 0 };
+      let calibration = { beta: 0, gamma: 0 };
+      let tilt = { x: 0, y: 0 };
+      let keyboard = { left: false, right: false, up: false, down: false };
+      let pointer = { active: false, originX: 0, originY: 0, x: 0, y: 0 };
+
+      function randomInt(max) {
+        return Math.floor(Math.random() * max);
+      }
+
+      function index(c, r) {
+        return r * cols + c;
+      }
+
+      function makeCell(c, r) {
+        return { c, r, visited: false, walls: [true, true, true, true] };
+      }
+
+      function generateMaze() {
+        const config = settings[difficultySelect.value];
+        cols = config.cols;
+        rows = config.rows;
+        maze = Array.from({ length: rows }, (_, r) =>
+          Array.from({ length: cols }, (_, c) => makeCell(c, r))
+        );
+
+        const corners = [
+          { c: 0, r: 0 },
+          { c: cols - 1, r: 0 },
+          { c: 0, r: rows - 1 },
+          { c: cols - 1, r: rows - 1 }
+        ];
+        startCell = corners[randomInt(corners.length)];
+
+        const stack = [];
+        let current = maze[startCell.r][startCell.c];
+        current.visited = true;
+        let visitedCount = 1;
+
+        while (visitedCount < cols * rows) {
+          const candidates = [];
+          const directions = [
+            { dc: 0, dr: -1, wall: 0, opposite: 2 },
+            { dc: 1, dr: 0, wall: 1, opposite: 3 },
+            { dc: 0, dr: 1, wall: 2, opposite: 0 },
+            { dc: -1, dr: 0, wall: 3, opposite: 1 }
+          ];
+
+          for (const direction of directions) {
+            const nc = current.c + direction.dc;
+            const nr = current.r + direction.dr;
+            if (nc >= 0 && nc < cols && nr >= 0 && nr < rows && !maze[nr][nc].visited) {
+              candidates.push({ cell: maze[nr][nc], direction });
+            }
+          }
+
+          if (candidates.length > 0) {
+            const choice = candidates[randomInt(candidates.length)];
+            current.walls[choice.direction.wall] = false;
+            choice.cell.walls[choice.direction.opposite] = false;
+            stack.push(current);
+            current = choice.cell;
+            current.visited = true;
+            visitedCount += 1;
+          } else {
+            current = stack.pop();
+          }
+        }
+
+        for (const row of maze) {
+          for (const cell of row) cell.visited = false;
+        }
+
+        goalCell = findFarthestCell(startCell);
+        rebuildGeometry();
+        resetMarble();
+        updateBestDisplay();
+      }
+
+      function findFarthestCell(origin) {
+        const queue = [{ ...origin, distance: 0 }];
+        const visited = new Set([index(origin.c, origin.r)]);
+        let farthest = queue[0];
+
+        while (queue.length) {
+          const current = queue.shift();
+          if (current.distance > farthest.distance) farthest = current;
+          const cell = maze[current.r][current.c];
+          const moves = [
+            { dc: 0, dr: -1, wall: 0 },
+            { dc: 1, dr: 0, wall: 1 },
+            { dc: 0, dr: 1, wall: 2 },
+            { dc: -1, dr: 0, wall: 3 }
+          ];
+
+          for (const move of moves) {
+            if (cell.walls[move.wall]) continue;
+            const nc = current.c + move.dc;
+            const nr = current.r + move.dr;
+            const key = index(nc, nr);
+            if (!visited.has(key)) {
+              visited.add(key);
+              queue.push({ c: nc, r: nr, distance: current.distance + 1 });
+            }
+          }
+        }
+        return { c: farthest.c, r: farthest.r };
+      }
+
+      function resizeCanvas() {
+        const rect = boardWrap.getBoundingClientRect();
+        const cssWidth = Math.max(280, rect.width);
+        const cssHeight = Math.min(window.innerHeight * 0.68, cssWidth * 1.55);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.style.width = cssWidth + 'px';
+        canvas.style.height = cssHeight + 'px';
+        canvas.width = Math.round(cssWidth * dpr);
+        canvas.height = Math.round(cssHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        canvas._cssWidth = cssWidth;
+        canvas._cssHeight = cssHeight;
+        rebuildGeometry();
+      }
+
+      function rebuildGeometry() {
+        if (!maze || !canvas._cssWidth || !canvas._cssHeight) return;
+        const padding = 12;
+        cellSize = Math.min(
+          (canvas._cssWidth - padding * 2) / cols,
+          (canvas._cssHeight - padding * 2) / rows
+        );
+        offsetX = (canvas._cssWidth - cols * cellSize) / 2;
+        offsetY = (canvas._cssHeight - rows * cellSize) / 2;
+        wallThickness = Math.max(2.2, cellSize * 0.085);
+        marbleRadius = Math.max(5, cellSize * 0.24);
+        goalRadius = Math.max(7, cellSize * 0.29);
+        buildWallRects();
+
+        if (running || won) {
+          marble.x = Math.min(Math.max(marble.x, offsetX + marbleRadius), offsetX + cols * cellSize - marbleRadius);
+          marble.y = Math.min(Math.max(marble.y, offsetY + marbleRadius), offsetY + rows * cellSize - marbleRadius);
+        } else {
+          resetMarble();
+        }
+      }
+
+      function buildWallRects() {
+        wallRects = [];
+        if (!maze) return;
+        const t = wallThickness;
+
+        for (let r = 0; r < rows; r += 1) {
+          for (let c = 0; c < cols; c += 1) {
+            const cell = maze[r][c];
+            const x = offsetX + c * cellSize;
+            const y = offsetY + r * cellSize;
+
+            if (cell.walls[0]) wallRects.push({ x: x - t / 2, y: y - t / 2, w: cellSize + t, h: t });
+            if (cell.walls[3]) wallRects.push({ x: x - t / 2, y: y - t / 2, w: t, h: cellSize + t });
+            if (r === rows - 1 && cell.walls[2]) wallRects.push({ x: x - t / 2, y: y + cellSize - t / 2, w: cellSize + t, h: t });
+            if (c === cols - 1 && cell.walls[1]) wallRects.push({ x: x + cellSize - t / 2, y: y - t / 2, w: t, h: cellSize + t });
+          }
+        }
+      }
+
+      function cellCenter(cell) {
+        return {
+          x: offsetX + (cell.c + 0.5) * cellSize,
+          y: offsetY + (cell.r + 0.5) * cellSize
+        };
+      }
+
+      function resetMarble() {
+        if (!maze) return;
+        const center = cellCenter(startCell);
+        marble.x = center.x;
+        marble.y = center.y;
+        marble.vx = 0;
+        marble.vy = 0;
+      }
+
+      function shortestAngleDelta(value, base) {
+        let delta = value - base;
+        while (delta > 180) delta -= 360;
+        while (delta < -180) delta += 360;
+        return delta;
+      }
+
+      function updateTiltFromSensor() {
+        if (!hasSensorReading) return;
+        const dBeta = shortestAngleDelta(orientationData.beta, calibration.beta);
+        const dGamma = shortestAngleDelta(orientationData.gamma, calibration.gamma);
+        const angle = (screen.orientation && Number.isFinite(screen.orientation.angle))
+          ? screen.orientation.angle
+          : (window.orientation || 0);
+
+        let tx = dGamma;
+        let ty = dBeta;
+        if (angle === 90 || angle === -270) {
+          tx = -dBeta;
+          ty = dGamma;
+        } else if (angle === -90 || angle === 270) {
+          tx = dBeta;
+          ty = -dGamma;
+        } else if (Math.abs(angle) === 180) {
+          tx = -dGamma;
+          ty = -dBeta;
+        }
+
+        const sensitivity = Number(sensitivityRange.value);
+        tilt.x = Math.max(-1, Math.min(1, tx / 18)) * sensitivity;
+        tilt.y = Math.max(-1, Math.min(1, ty / 18)) * sensitivity;
+      }
+
+      function calibrate() {
+        if (hasSensorReading) {
+          calibration.beta = orientationData.beta;
+          calibration.gamma = orientationData.gamma;
+          tilt.x = 0;
+          tilt.y = 0;
+          sensorStatus.textContent = 'Calibrated — tilt control active';
+          sensorDot.classList.add('active');
+          if (navigator.vibrate) navigator.vibrate(25);
+        } else {
+          sensorStatus.textContent = 'No sensor reading — use touch or arrow keys';
+        }
+      }
+
+      async function enableSensors() {
+        try {
+          if (typeof DeviceOrientationEvent !== 'undefined' &&
+              typeof DeviceOrientationEvent.requestPermission === 'function') {
+            const permission = await DeviceOrientationEvent.requestPermission();
+            if (permission !== 'granted') throw new Error('Motion permission was not granted.');
+          }
+
+          window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+          sensorEnabled = true;
+          sensorStatus.textContent = 'Waiting for motion sensor…';
+          sensorDot.classList.remove('active');
+        } catch (error) {
+          sensorEnabled = false;
+          sensorStatus.textContent = 'Tilt unavailable — touch control enabled';
+          console.warn(error);
+        }
+      }
+
+      function handleOrientation(event) {
+        if (!Number.isFinite(event.beta) || !Number.isFinite(event.gamma)) return;
+        orientationData.beta = event.beta;
+        orientationData.gamma = event.gamma;
+
+        if (!hasSensorReading) {
+          hasSensorReading = true;
+          calibration.beta = event.beta;
+          calibration.gamma = event.gamma;
+          sensorStatus.textContent = 'Tilt control active';
+          sensorDot.classList.add('active');
+        }
+      }
+
+      function circleRectOverlap(cx, cy, radius, rect) {
+        const nearestX = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
+        const nearestY = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
+        const dx = cx - nearestX;
+        const dy = cy - nearestY;
+        return dx * dx + dy * dy < radius * radius;
+      }
+
+      function moveAndCollide(dt) {
+        const acceleration = Math.max(580, cellSize * 28);
+        const maxSpeed = Math.max(250, cellSize * 10.5);
+        const drag = Math.pow(0.35, dt);
+
+        updateTiltFromSensor();
+
+        let inputX = tilt.x;
+        let inputY = tilt.y;
+
+        if (keyboard.left) inputX -= 1;
+        if (keyboard.right) inputX += 1;
+        if (keyboard.up) inputY -= 1;
+        if (keyboard.down) inputY += 1;
+
+        if (pointer.active) {
+          const dx = pointer.x - pointer.originX;
+          const dy = pointer.y - pointer.originY;
+          const maxDistance = 90;
+          inputX += Math.max(-1, Math.min(1, dx / maxDistance));
+          inputY += Math.max(-1, Math.min(1, dy / maxDistance));
+        }
+
+        const magnitude = Math.hypot(inputX, inputY);
+        if (magnitude > 1) {
+          inputX /= magnitude;
+          inputY /= magnitude;
+        }
+
+        marble.vx += inputX * acceleration * dt;
+        marble.vy += inputY * acceleration * dt;
+        marble.vx *= drag;
+        marble.vy *= drag;
+
+        const speed = Math.hypot(marble.vx, marble.vy);
+        if (speed > maxSpeed) {
+          marble.vx = (marble.vx / speed) * maxSpeed;
+          marble.vy = (marble.vy / speed) * maxSpeed;
+        }
+
+        const totalDx = marble.vx * dt;
+        const totalDy = marble.vy * dt;
+        const steps = Math.max(1, Math.ceil(Math.max(Math.abs(totalDx), Math.abs(totalDy)) / Math.max(2, marbleRadius * 0.45)));
+        const stepX = totalDx / steps;
+        const stepY = totalDy / steps;
+
+        for (let step = 0; step < steps; step += 1) {
+          const nextX = marble.x + stepX;
+          let hitX = false;
+          for (const wall of wallRects) {
+            if (circleRectOverlap(nextX, marble.y, marbleRadius, wall)) {
+              hitX = true;
+              break;
+            }
+          }
+          if (!hitX) marble.x = nextX;
+          else marble.vx *= -0.18;
+
+          const nextY = marble.y + stepY;
+          let hitY = false;
+          for (const wall of wallRects) {
+            if (circleRectOverlap(marble.x, nextY, marbleRadius, wall)) {
+              hitY = true;
+              break;
+            }
+          }
+          if (!hitY) marble.y = nextY;
+          else marble.vy *= -0.18;
+        }
+      }
+
+      function checkGoal() {
+        if (!running || won) return;
+        const goal = cellCenter(goalCell);
+        const distance = Math.hypot(marble.x - goal.x, marble.y - goal.y);
+        if (distance < goalRadius * 0.72) finishMaze();
+      }
+
+      function finishMaze() {
+        won = true;
+        running = false;
+        elapsed = (performance.now() - runStart) / 1000;
+        saveBestTime(elapsed);
+        updateBestDisplay();
+        if (navigator.vibrate) navigator.vibrate([40, 40, 90]);
+
+        overlayTitle.textContent = 'Maze complete!';
+        overlayText.textContent = `You reached the goal in ${elapsed.toFixed(1)} seconds.`;
+        startButton.textContent = 'Next maze';
+        startOverlay.classList.remove('hidden');
+      }
+
+      function bestKey() {
+        return `tiltMazeBest:${difficultySelect.value}`;
+      }
+
+      function getBestTime() {
+        const value = Number(localStorage.getItem(bestKey()));
+        return Number.isFinite(value) && value > 0 ? value : null;
+      }
+
+      function saveBestTime(value) {
+        const previous = getBestTime();
+        if (previous === null || value < previous) {
+          localStorage.setItem(bestKey(), String(value));
+        }
+      }
+
+      function updateBestDisplay() {
+        const best = getBestTime();
+        bestValue.textContent = best === null ? '—' : `${best.toFixed(1)} s`;
+      }
+
+      function startRun(newLevel = false) {
+        if (newLevel) level += 1;
+        if (won || newLevel) generateMaze();
+        resetMarble();
+        won = false;
+        running = true;
+        runStart = performance.now();
+        elapsed = 0;
+        levelValue.textContent = String(level);
+        timeValue.textContent = '0.0 s';
+        startOverlay.classList.add('hidden');
+      }
+
+      function drawRoundedRect(x, y, w, h, radius) {
+        const r = Math.min(radius, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      function draw(timestamp) {
+        const width = canvas._cssWidth || 320;
+        const height = canvas._cssHeight || 500;
+        ctx.clearRect(0, 0, width, height);
+
+        const floorGradient = ctx.createLinearGradient(0, offsetY, 0, offsetY + rows * cellSize);
+        floorGradient.addColorStop(0, '#11243a');
+        floorGradient.addColorStop(1, '#091626');
+        ctx.fillStyle = floorGradient;
+        drawRoundedRect(offsetX, offsetY, cols * cellSize, rows * cellSize, 10);
+        ctx.fill();
+
+        const goal = cellCenter(goalCell);
+        const pulse = 0.86 + Math.sin(timestamp * 0.005) * 0.12;
+        ctx.save();
+        ctx.shadowColor = 'rgba(112,225,178,.95)';
+        ctx.shadowBlur = goalRadius * 1.5;
+        ctx.beginPath();
+        ctx.arc(goal.x, goal.y, goalRadius * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = '#70e1b2';
+        ctx.fill();
+        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(goal.x, goal.y, goalRadius * 0.38, 0, Math.PI * 2);
+        ctx.fillStyle = '#071c15';
+        ctx.fill();
+
+        ctx.save();
+        ctx.lineWidth = wallThickness;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#dbe8f5';
+        ctx.shadowColor = 'rgba(185,221,255,.20)';
+        ctx.shadowBlur = 5;
+
+        for (let r = 0; r < rows; r += 1) {
+          for (let c = 0; c < cols; c += 1) {
+            const cell = maze[r][c];
+            const x = offsetX + c * cellSize;
+            const y = offsetY + r * cellSize;
+            ctx.beginPath();
+            if (cell.walls[0]) { ctx.moveTo(x, y); ctx.lineTo(x + cellSize, y); }
+            if (cell.walls[1]) { ctx.moveTo(x + cellSize, y); ctx.lineTo(x + cellSize, y + cellSize); }
+            if (cell.walls[2]) { ctx.moveTo(x + cellSize, y + cellSize); ctx.lineTo(x, y + cellSize); }
+            if (cell.walls[3]) { ctx.moveTo(x, y + cellSize); ctx.lineTo(x, y); }
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+
+        const ballGradient = ctx.createRadialGradient(
+          marble.x - marbleRadius * 0.35,
+          marble.y - marbleRadius * 0.45,
+          marbleRadius * 0.1,
+          marble.x,
+          marble.y,
+          marbleRadius
+        );
+        ballGradient.addColorStop(0, '#ffffff');
+        ballGradient.addColorStop(0.28, '#a8d8ff');
+        ballGradient.addColorStop(0.68, '#458fd0');
+        ballGradient.addColorStop(1, '#163c64');
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,.62)';
+        ctx.shadowBlur = marbleRadius * 0.65;
+        ctx.shadowOffsetY = marbleRadius * 0.35;
+        ctx.beginPath();
+        ctx.arc(marble.x, marble.y, marbleRadius, 0, Math.PI * 2);
+        ctx.fillStyle = ballGradient;
+        ctx.fill();
+        ctx.restore();
+
+        if (pointer.active) {
+          const dx = pointer.x - pointer.originX;
+          const dy = pointer.y - pointer.originY;
+          const distance = Math.hypot(dx, dy);
+          const maxDistance = 90;
+          const scale = distance > maxDistance ? maxDistance / distance : 1;
+          const knobX = pointer.originX + dx * scale;
+          const knobY = pointer.originY + dy * scale;
+          ctx.save();
+          ctx.globalAlpha = .65;
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#dbe8f5';
+          ctx.beginPath();
+          ctx.arc(pointer.originX, pointer.originY, 36, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = '#70e1b2';
+          ctx.beginPath();
+          ctx.arc(knobX, knobY, 15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function gameLoop(now) {
+        const dt = Math.min(0.034, Math.max(0.001, (now - lastFrame) / 1000));
+        lastFrame = now;
+
+        if (running) {
+          moveAndCollide(dt);
+          elapsed = (now - runStart) / 1000;
+          timeValue.textContent = `${elapsed.toFixed(1)} s`;
+          checkGoal();
+        }
+
+        draw(now);
+        requestAnimationFrame(gameLoop);
+      }
+
+      function canvasPoint(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: (event.clientX - rect.left) * (canvas._cssWidth / rect.width),
+          y: (event.clientY - rect.top) * (canvas._cssHeight / rect.height)
+        };
+      }
+
+      canvas.addEventListener('pointerdown', (event) => {
+        if (!running) return;
+        const point = canvasPoint(event);
+        pointer.active = true;
+        pointer.originX = point.x;
+        pointer.originY = point.y;
+        pointer.x = point.x;
+        pointer.y = point.y;
+        canvas.setPointerCapture(event.pointerId);
+      });
+
+      canvas.addEventListener('pointermove', (event) => {
+        if (!pointer.active) return;
+        const point = canvasPoint(event);
+        pointer.x = point.x;
+        pointer.y = point.y;
+      });
+
+      function endPointer(event) {
+        pointer.active = false;
+        if (event && canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+      }
+
+      canvas.addEventListener('pointerup', endPointer);
+      canvas.addEventListener('pointercancel', endPointer);
+
+      const keyMap = {
+        ArrowLeft: 'left',
+        ArrowRight: 'right',
+        ArrowUp: 'up',
+        ArrowDown: 'down',
+        a: 'left', d: 'right', w: 'up', s: 'down'
+      };
+
+      window.addEventListener('keydown', (event) => {
+        const key = keyMap[event.key];
+        if (!key) return;
+        keyboard[key] = true;
+        event.preventDefault();
+      });
+
+      window.addEventListener('keyup', (event) => {
+        const key = keyMap[event.key];
+        if (!key) return;
+        keyboard[key] = false;
+        event.preventDefault();
+      });
+
+      startButton.addEventListener('click', async () => {
+        if (!sensorEnabled) await enableSensors();
+        if (won) startRun(true);
+        else startRun(false);
+      });
+
+      calibrateButton.addEventListener('click', calibrate);
+
+      newMazeButton.addEventListener('click', () => {
+        level += 1;
+        levelValue.textContent = String(level);
+        generateMaze();
+        running = true;
+        won = false;
+        runStart = performance.now();
+        startOverlay.classList.add('hidden');
+      });
+
+      difficultySelect.addEventListener('change', () => {
+        level = 1;
+        levelValue.textContent = '1';
+        generateMaze();
+        running = false;
+        won = false;
+        overlayTitle.textContent = 'New difficulty';
+        overlayText.textContent = 'The maze size has changed. Hold the phone comfortably, then start.';
+        startButton.textContent = 'Start maze';
+        startOverlay.classList.remove('hidden');
+      });
+
+      sensitivityRange.addEventListener('input', () => {
+        sensitivityValue.textContent = `${Number(sensitivityRange.value).toFixed(2)}×`;
+      });
+
+      window.addEventListener('resize', resizeCanvas, { passive: true });
+      window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 150), { passive: true });
+
+      resizeCanvas();
+      generateMaze();
+      requestAnimationFrame(gameLoop);
+    })();
+  </script>
+</body>
+</html>

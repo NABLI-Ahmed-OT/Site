@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b18">
+<title>Hand PolyDrop</title>
+<style>
+:root{--bg:#070a16;--panel:#11172b;--cyan:#4df6ff;--pink:#ff4fcf;--yellow:#ffe05c;--green:#6cff8e;--red:#ff536b;--text:#f8fbff;--muted:#aeb8d0}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:radial-gradient(circle at top,#17204a 0,#080b18 55%,#03050b 100%);color:var(--text);font-family:system-ui,sans-serif;overscroll-behavior:none}.app{width:min(100%,860px);margin:auto;padding:max(10px,env(safe-area-inset-top)) 10px max(18px,env(safe-area-inset-bottom))}h1{margin:0;text-align:center;color:var(--yellow);font-size:clamp(1.4rem,5vw,2.2rem);letter-spacing:.04em}.sub{margin:4px 0 10px;text-align:center;color:var(--muted);font-size:.84rem}.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px}.hud div{background:rgba(17,23,43,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:8px;text-align:center}.hud strong{display:block;font-size:1.15rem;color:var(--cyan)}.hud span{font-size:.65rem;color:var(--muted)}.stage{position:relative;aspect-ratio:4/5;max-height:72dvh;overflow:hidden;background:#040713;border:2px solid var(--pink);border-radius:16px;box-shadow:0 0 28px rgba(255,79,207,.25);touch-action:none}#game{position:absolute;inset:0;width:100%;height:100%;display:block}video,#handCanvas{position:absolute;right:8px;bottom:8px;width:25%;max-width:150px;aspect-ratio:3/4;object-fit:cover;transform:scaleX(-1);border:2px solid var(--cyan);border-radius:10px;background:#020308}#handCanvas{z-index:3;pointer-events:none}.status{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:4;max-width:90%;padding:7px 10px;background:rgba(3,6,15,.82);border:1px solid var(--cyan);border-radius:999px;font-size:.75rem;text-align:center}.message{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(2,4,10,.55);text-align:center;padding:24px;font-weight:800;font-size:clamp(1rem,4vw,1.6rem);color:var(--yellow)}.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}button,select,input{font:inherit}button{min-height:48px;border:0;border-radius:12px;background:#1c284a;color:white;font-weight:800;padding:10px;cursor:pointer}button.primary{background:var(--pink);color:#1a0717}button:disabled{opacity:.55}.settings{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.setting{background:rgba(17,23,43,.94);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:9px}.setting label{display:block;color:var(--muted);font-size:.74rem;margin-bottom:5px}.setting select,.setting input[type=range]{width:100%}.setting select{background:#0c1224;color:white;border:1px solid #425176;border-radius:9px;padding:9px}.fallback{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.hint{margin:9px 2px 0;color:var(--muted);font-size:.76rem;text-align:center;line-height:1.45}@media(max-width:560px){.hud{grid-template-columns:repeat(2,1fr)}.controls{grid-template-columns:1fr 1fr}.controls button:last-child{grid-column:span 2}.settings{grid-template-columns:1fr}}
+
+details{background:rgba(17,23,43,.92);border:1px solid rgba(255,255,255,.13);border-radius:12px;margin-top:8px;overflow:hidden}
+summary{cursor:pointer;padding:11px 13px;font-weight:800;color:var(--cyan);user-select:none}
+.config-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:0 11px 12px}
+.config-grid.cols4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:.68rem;color:var(--muted);font-weight:800;letter-spacing:.03em}
+.field input,.field select{width:100%;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:#080d1d;color:var(--text);padding:8px;font:inherit}
+.field input:focus,.field select:focus{outline:2px solid var(--cyan);outline-offset:1px}
+.settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.settings-actions button{flex:1}
+.validation{margin:0 11px 11px;border-radius:9px;padding:9px 10px;font-size:.78rem;background:rgba(77,246,255,.08);border:1px solid rgba(77,246,255,.22);color:var(--muted)}
+.validation.error{background:rgba(255,83,107,.1);border-color:rgba(255,83,107,.5);color:#ffd4db}
+.validation.ok{color:#d9ffff}
+.float-score{position:absolute;pointer-events:none;font-weight:900;text-shadow:0 2px 8px #000;animation:floatScore .9s ease-out forwards;z-index:7}
+@keyframes floatScore{from{transform:translate(-50%,-50%) scale(.8);opacity:1}to{transform:translate(-50%,-110%) scale(1.18);opacity:0}}
+@media(max-width:620px){.config-grid,.config-grid.cols4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){.config-grid,.config-grid.cols4{grid-template-columns:1fr}}
+
+.report-panel{margin-top:12px;background:rgba(17,23,43,.94);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px}
+.report-panel h2,.report-panel h3{margin:0 0 9px;color:var(--yellow)}
+.patient-grid,.metric-grid,.chart-grid{display:grid;gap:9px}
+.patient-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin:10px 0}
+.metric{background:#080d1d;border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:9px}
+.metric b{display:block;color:var(--cyan);font-size:1.15rem}.metric span{font-size:.67rem;color:var(--muted)}
+.chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.chart-box{background:#fff;border-radius:10px;padding:8px;min-height:230px}
+.chart-box canvas{width:100%!important;height:210px!important}
+.report-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.report-actions button{flex:1;min-width:140px}
+.session-table{width:100%;border-collapse:collapse;font-size:.76rem;margin-top:8px}
+.session-table th,.session-table td{border-bottom:1px solid rgba(255,255,255,.12);padding:7px;text-align:left}
+.session-table th{color:var(--cyan)}
+.clinical-note{font-size:.74rem;color:var(--muted);border-left:3px solid var(--yellow);padding-left:9px;margin-top:10px}
+@media(max-width:700px){.patient-grid{grid-template-columns:1fr 1fr}.metric-grid{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}}
+@media(max-width:420px){.patient-grid{grid-template-columns:1fr}}
+
+</style>
+</head>
+
+<body>
+<main class="app">
+<h1>HAND POLYDROP</h1>
+<p class="sub">Physics balancing game with configurable shapes, sizes, scoring and timing.</p>
+
+<section class="hud">
+  <div><strong id="score">0</strong><span>SCORE</span></div>
+  <div><strong id="best">0</strong><span>BEST</span></div>
+  <div><strong id="level">1</strong><span>LEVEL</span></div>
+  <div><strong id="health">5</strong><span>HEALTH</span></div>
+</section>
+
+<section id="stage" class="stage">
+  <canvas id="game"></canvas>
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="handCanvas"></canvas>
+  <div id="status" class="status">START CAMERA OR USE TOUCH</div>
+  <div id="message" class="message">PRESS START GAME</div>
+</section>
+
+<section class="controls">
+  <button id="cameraBtn">START CAMERA</button>
+  <button id="calibrateBtn">CALIBRATE</button>
+  <button id="startBtn" class="primary">START GAME</button>
+</section>
+
+<details open>
+<summary>Hand and bar controls</summary>
+<div class="config-grid">
+  <div class="field"><label for="handSelect">CONTROL HAND</label><select id="handSelect"><option value="Right">Right hand</option><option value="Left">Left hand</option></select></div>
+  <div class="field"><label for="sensitivity">MOVE SENSITIVITY</label><input id="sensitivity" type="number" min="0.3" max="4" step="0.1" value="1.3"></div>
+  <div class="field"><label for="rotationSensitivity">ROTATION SENSITIVITY</label><input id="rotationSensitivity" type="number" min="0.3" max="4" step="0.1" value="1.2"></div>
+  <div class="field"><label for="maxAngle">MAXIMUM BAR ANGLE (°)</label><input id="maxAngle" type="number" min="5" max="75" step="1" value="40"></div>
+</div>
+</details>
+
+<details>
+<summary>Shape base scores</summary>
+<div class="config-grid cols4">
+  <div class="field"><label for="scoreCircle">CIRCLE</label><input id="scoreCircle" type="number" min="0" max="10000" step="5" value="100"></div>
+  <div class="field"><label for="scoreSquare">SQUARE</label><input id="scoreSquare" type="number" min="0" max="10000" step="5" value="120"></div>
+  <div class="field"><label for="scoreTriangle">TRIANGLE</label><input id="scoreTriangle" type="number" min="0" max="10000" step="5" value="150"></div>
+  <div class="field"><label for="scoreDiamond">DIAMOND</label><input id="scoreDiamond" type="number" min="0" max="10000" step="5" value="180"></div>
+</div>
+</details>
+
+<details>
+<summary>Size, multiplier and validation</summary>
+<div class="config-grid">
+  <div class="field"><label for="smallPx">SMALL SIZE (PX)</label><input id="smallPx" type="number" min="6" max="60" step="1" value="12"></div>
+  <div class="field"><label for="smallMultiplier">SMALL MULTIPLIER</label><input id="smallMultiplier" type="number" min="0" max="10" step="0.05" value="1"></div>
+  <div class="field"><label for="smallValidation">SMALL VALIDATION (S)</label><input id="smallValidation" type="number" min="0.1" max="10" step="0.1" value="0.7"></div>
+  <div class="field"><label for="smallProbability">SMALL PROBABILITY (%)</label><input id="smallProbability" type="number" min="0" max="100" step="1" value="50"></div>
+
+  <div class="field"><label for="mediumPx">MEDIUM SIZE (PX)</label><input id="mediumPx" type="number" min="6" max="80" step="1" value="17"></div>
+  <div class="field"><label for="mediumMultiplier">MEDIUM MULTIPLIER</label><input id="mediumMultiplier" type="number" min="0" max="10" step="0.05" value="1.5"></div>
+  <div class="field"><label for="mediumValidation">MEDIUM VALIDATION (S)</label><input id="mediumValidation" type="number" min="0.1" max="10" step="0.1" value="1"></div>
+  <div class="field"><label for="mediumProbability">MEDIUM PROBABILITY (%)</label><input id="mediumProbability" type="number" min="0" max="100" step="1" value="35"></div>
+
+  <div class="field"><label for="largePx">LARGE SIZE (PX)</label><input id="largePx" type="number" min="6" max="110" step="1" value="23"></div>
+  <div class="field"><label for="largeMultiplier">LARGE MULTIPLIER</label><input id="largeMultiplier" type="number" min="0" max="10" step="0.05" value="2"></div>
+  <div class="field"><label for="largeValidation">LARGE VALIDATION (S)</label><input id="largeValidation" type="number" min="0.1" max="10" step="0.1" value="1.3"></div>
+  <div class="field"><label for="largeProbability">LARGE PROBABILITY (%)</label><input id="largeProbability" type="number" min="0" max="100" step="1" value="15"></div>
+</div>
+</details>
+
+<details>
+<summary>Shape distribution</summary>
+<div class="config-grid cols4">
+  <div class="field"><label for="probCircle">CIRCLE (%)</label><input id="probCircle" type="number" min="0" max="100" step="1" value="25"></div>
+  <div class="field"><label for="probSquare">SQUARE (%)</label><input id="probSquare" type="number" min="0" max="100" step="1" value="25"></div>
+  <div class="field"><label for="probTriangle">TRIANGLE (%)</label><input id="probTriangle" type="number" min="0" max="100" step="1" value="25"></div>
+  <div class="field"><label for="probDiamond">DIAMOND (%)</label><input id="probDiamond" type="number" min="0" max="100" step="1" value="25"></div>
+</div>
+</details>
+
+<details>
+<summary>Spawn frequency</summary>
+<div class="config-grid">
+  <div class="field"><label for="shapesPerMinute">TARGET SHAPES / MINUTE</label><input id="shapesPerMinute" type="number" min="1" max="240" step="1" value="30"></div>
+  <div class="field"><label for="minInterval">MINIMUM INTERVAL (S)</label><input id="minInterval" type="number" min="0.1" max="60" step="0.1" value="1"></div>
+  <div class="field"><label for="maxInterval">MAXIMUM INTERVAL (S)</label><input id="maxInterval" type="number" min="0.1" max="60" step="0.1" value="3"></div>
+  <div class="field"><label>EFFECTIVE ESTIMATE</label><input id="effectiveRate" type="text" value="30.0 shapes/min" readonly></div>
+</div>
+</details>
+
+<details>
+<summary>Time multiplier and contact</summary>
+<div class="config-grid">
+  <div class="field"><label for="referenceFactor">REFERENCE TIME FACTOR</label><input id="referenceFactor" type="number" min="0.1" max="5" step="0.05" value="1.5"></div>
+  <div class="field"><label for="minTimeMultiplier">MIN TIME MULTIPLIER</label><input id="minTimeMultiplier" type="number" min="0" max="10" step="0.05" value="0.75"></div>
+  <div class="field"><label for="maxTimeMultiplier">MAX TIME MULTIPLIER</label><input id="maxTimeMultiplier" type="number" min="0" max="10" step="0.05" value="2"></div>
+  <div class="field"><label for="contactTolerance">CONTACT TOLERANCE (S)</label><input id="contactTolerance" type="number" min="0" max="1" step="0.01" value="0.15"></div>
+</div>
+<div class="validation">
+Time multiplier = (required validation time × reference factor) ÷ total elapsed stabilization time, clamped between the minimum and maximum values.
+</div>
+</details>
+
+<div id="settingsValidation" class="validation ok">Settings are valid.</div>
+<div class="settings-actions">
+  <button id="applySettingsBtn">APPLY SETTINGS</button>
+  <button id="resetSettingsBtn">RESET DEFAULTS</button>
+</div>
+
+
+<section class="report-panel">
+<h2>Rehabilitation session</h2>
+<div class="patient-grid">
+  <div class="field"><label for="patientId">PATIENT ID</label><input id="patientId" type="text" placeholder="P-001"></div>
+  <div class="field"><label for="patientName">PATIENT NAME</label><input id="patientName" type="text" placeholder="Optional"></div>
+  <div class="field"><label for="therapistName">THERAPIST</label><input id="therapistName" type="text" placeholder="Therapist name"></div>
+  <div class="field"><label for="testedHand">TESTED HAND</label><select id="testedHand"><option>Right</option><option>Left</option><option>Bilateral</option></select></div>
+  <div class="field"><label for="diagnosis">CLINICAL CONTEXT</label><input id="diagnosis" type="text" placeholder="Stroke, Parkinson's, hand injury..."></div>
+  <div class="field"><label for="sessionNotes">SESSION NOTES</label><input id="sessionNotes" type="text" placeholder="Pain, fatigue, assistance..."></div>
+</div>
+
+<div class="metric-grid">
+  <div class="metric"><b id="mCatchRate">0%</b><span>CATCH RATE</span></div>
+  <div class="metric"><b id="mReaction">—</b><span>MEAN REACTION</span></div>
+  <div class="metric"><b id="mStability">0</b><span>STABILITY INDEX</span></div>
+  <div class="metric"><b id="mSmoothness">0</b><span>SMOOTHNESS INDEX</span></div>
+  <div class="metric"><b id="mRom">0°</b><span>WRIST ROTATION ROM</span></div>
+  <div class="metric"><b id="mCorrections">0</b><span>DIRECTION CORRECTIONS</span></div>
+  <div class="metric"><b id="mFatigue">0%</b><span>FATIGUE CHANGE</span></div>
+  <div class="metric"><b id="mGlobal">0</b><span>FUNCTIONAL PERFORMANCE</span></div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-box"><canvas id="performanceChart"></canvas></div>
+  <div class="chart-box"><canvas id="angleChart"></canvas></div>
+  <div class="chart-box"><canvas id="distributionChart"></canvas></div>
+  <div class="chart-box"><canvas id="progressChart"></canvas></div>
+</div>
+
+<div class="report-actions">
+  <button id="saveSessionBtn">SAVE SESSION</button>
+  <button id="exportPdfBtn">EXPORT PDF</button>
+  <button id="exportCsvBtn">EXPORT CSV</button>
+  <button id="exportJsonBtn">EXPORT JSON</button>
+  <button id="clearSessionsBtn">CLEAR HISTORY</button>
+</div>
+
+<h3 style="margin-top:14px">Saved sessions</h3>
+<div style="overflow:auto">
+<table class="session-table">
+<thead><tr><th>Date</th><th>Patient</th><th>Score</th><th>Catch rate</th><th>Stability</th><th>ROM</th></tr></thead>
+<tbody id="sessionHistoryBody"></tbody>
+</table>
+</div>
+<p class="clinical-note">The composite indices are app-derived rehabilitation indicators for monitoring within this task. They are not diagnostic scores or substitutes for validated clinical assessments.</p>
+</section>
+
+<section class="fallback">
+  <button id="leftBtn">◀ MOVE LEFT</button>
+  <button id="rightBtn">MOVE RIGHT ▶</button>
+  <button id="rotateLeftBtn">↶ ROTATE LEFT</button>
+  <button id="rotateRightBtn">ROTATE RIGHT ↷</button>
+</section>
+
+<p class="hint">A shape scores only after its required stable contact time. Its base score depends on shape, then size and stabilization-time multipliers are applied.</p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script>
+'use strict';
+const {Engine,World,Bodies,Body,Events}=Matter;
+const $=id=>document.getElementById(id);
+const stage=$('stage'),canvas=$('game'),ctx=canvas.getContext('2d'),video=$('video'),hc=$('handCanvas'),hctx=hc.getContext('2d');
+const ui={score:$('score'),best:$('best'),level:$('level'),health:$('health'),status:$('status'),message:$('message'),validation:$('settingsValidation'),effectiveRate:$('effectiveRate')};
+
+const defaults={
+ hand:'Right',sensitivity:1.3,rotationSensitivity:1.2,maxAngle:40,
+ shapeScores:{circle:100,square:120,triangle:150,diamond:180},
+ sizes:{
+  small:{px:12,multiplier:1,validation:0.7,probability:50},
+  medium:{px:17,multiplier:1.5,validation:1,probability:35},
+  large:{px:23,multiplier:2,validation:1.3,probability:15}
+ },
+ shapeProbabilities:{circle:25,square:25,triangle:25,diamond:25},
+ spawn:{perMinute:30,minInterval:1,maxInterval:3},
+ time:{referenceFactor:1.5,minMultiplier:0.75,maxMultiplier:2,contactTolerance:0.15}
+};
+let settings=structuredClone(defaults);
+
+let hands=null,camera=null,handX=.5,neutralX=.5,handRoll=0,neutralRoll=0,touchDir=0,touchRotation=0;
+let engine=null,barBody=null,shapes=[],particles=[],floatingScores=[];
+let running=false,last=0,score=0,best=0,level=1,health=5,spawnTimer=.5,width=0,height=0;
+
+const bar={x:.5,y:.84,widthRatio:.34,heightRatio:.035,angle:0,targetAngle:0};
+
+let sessionData=null,charts={};
+function newSessionData(){
+ return{
+  startedAt:new Date().toISOString(),endedAt:null,samples:[],events:[],
+  spawned:0,caught:0,missed:0,totalPoints:0,
+  reactionTimes:[],validationTimes:[],timeMultipliers:[],
+  shapeStats:{circle:{caught:0,missed:0},square:{caught:0,missed:0},triangle:{caught:0,missed:0},diamond:{caught:0,missed:0}},
+  sizeStats:{small:{caught:0,missed:0},medium:{caught:0,missed:0},large:{caught:0,missed:0}},
+  lastSampleAt:0,lastBarX:.5,lastBarAngle:0,lastMoveDirection:0,corrections:0
+ }
+}
+
+
+function n(id){return Number($(id).value)}
+function weightedPick(entries){
+ const total=entries.reduce((s,e)=>s+Math.max(0,e[1]),0);
+ if(total<=0)return entries[0][0];
+ let r=Math.random()*total;
+ for(const [name,w] of entries){r-=Math.max(0,w);if(r<=0)return name}
+ return entries.at(-1)[0];
+}
+function readSettings(){
+ return{
+  hand:$('handSelect').value,
+  sensitivity:n('sensitivity'),rotationSensitivity:n('rotationSensitivity'),maxAngle:n('maxAngle'),
+  shapeScores:{circle:n('scoreCircle'),square:n('scoreSquare'),triangle:n('scoreTriangle'),diamond:n('scoreDiamond')},
+  sizes:{
+   small:{px:n('smallPx'),multiplier:n('smallMultiplier'),validation:n('smallValidation'),probability:n('smallProbability')},
+   medium:{px:n('mediumPx'),multiplier:n('mediumMultiplier'),validation:n('mediumValidation'),probability:n('mediumProbability')},
+   large:{px:n('largePx'),multiplier:n('largeMultiplier'),validation:n('largeValidation'),probability:n('largeProbability')}
+  },
+  shapeProbabilities:{circle:n('probCircle'),square:n('probSquare'),triangle:n('probTriangle'),diamond:n('probDiamond')},
+  spawn:{perMinute:n('shapesPerMinute'),minInterval:n('minInterval'),maxInterval:n('maxInterval')},
+  time:{referenceFactor:n('referenceFactor'),minMultiplier:n('minTimeMultiplier'),maxMultiplier:n('maxTimeMultiplier'),contactTolerance:n('contactTolerance')}
+ }
+}
+function writeSettings(s){
+ $('handSelect').value=s.hand;$('sensitivity').value=s.sensitivity;$('rotationSensitivity').value=s.rotationSensitivity;$('maxAngle').value=s.maxAngle;
+ for(const k of ['circle','square','triangle','diamond']){$('score'+k[0].toUpperCase()+k.slice(1)).value=s.shapeScores[k];$('prob'+k[0].toUpperCase()+k.slice(1)).value=s.shapeProbabilities[k]}
+ for(const k of ['small','medium','large']){
+  const p=k[0].toUpperCase()+k.slice(1),v=s.sizes[k];
+  $(k+'Px').value=v.px;$(k+'Multiplier').value=v.multiplier;$(k+'Validation').value=v.validation;$(k+'Probability').value=v.probability
+ }
+ $('shapesPerMinute').value=s.spawn.perMinute;$('minInterval').value=s.spawn.minInterval;$('maxInterval').value=s.spawn.maxInterval;
+ $('referenceFactor').value=s.time.referenceFactor;$('minTimeMultiplier').value=s.time.minMultiplier;$('maxTimeMultiplier').value=s.time.maxMultiplier;$('contactTolerance').value=s.time.contactTolerance;
+ validateSettings()
+}
+function validateSettings(){
+ const s=readSettings(),errors=[];
+ const allNumbers=[];
+ const walk=o=>Object.values(o).forEach(v=>typeof v==='object'?walk(v):typeof v==='number'&&allNumbers.push(v));walk(s);
+ if(allNumbers.some(v=>!Number.isFinite(v)))errors.push('All parameters must contain valid numbers.');
+ if(s.spawn.minInterval<=0||s.spawn.maxInterval<=0)errors.push('Spawn intervals must be greater than zero.');
+ if(s.spawn.minInterval>s.spawn.maxInterval)errors.push('Minimum spawn interval cannot exceed maximum interval.');
+ if(s.spawn.perMinute<=0)errors.push('Shapes per minute must be greater than zero.');
+ const baseline=60/s.spawn.perMinute;
+ if(baseline<s.spawn.minInterval||baseline>s.spawn.maxInterval)errors.push(`Target rate requires a ${baseline.toFixed(2)} s interval, outside the selected minimum/maximum range.`);
+ const sizeProb=Object.values(s.sizes).reduce((a,v)=>a+v.probability,0);
+ const shapeProb=Object.values(s.shapeProbabilities).reduce((a,v)=>a+v,0);
+ if(Math.abs(sizeProb-100)>.01)errors.push(`Size probabilities total ${sizeProb}%, but must equal 100%.`);
+ if(Math.abs(shapeProb-100)>.01)errors.push(`Shape probabilities total ${shapeProb}%, but must equal 100%.`);
+ if(s.sizes.small.px>=s.sizes.medium.px||s.sizes.medium.px>=s.sizes.large.px)errors.push('Shape dimensions must increase from small to medium to large.');
+ if(Object.values(s.sizes).some(v=>v.validation<=0||v.multiplier<0||v.px<=0))errors.push('Size, validation times and size multipliers must be positive.');
+ if(Object.values(s.shapeScores).some(v=>v<0))errors.push('Shape scores cannot be negative.');
+ if(s.time.minMultiplier>s.time.maxMultiplier)errors.push('Minimum time multiplier cannot exceed maximum time multiplier.');
+ if(s.time.referenceFactor<=0)errors.push('Reference time factor must be positive.');
+ const low=Math.max(s.spawn.minInterval,baseline*.65),high=Math.min(s.spawn.maxInterval,baseline*1.35);
+ const effective=low<=high?60/((low+high)/2):0;
+ ui.effectiveRate.value=effective?`${effective.toFixed(1)} shapes/min`:'Invalid range';
+ ui.validation.className='validation '+(errors.length?'error':'ok');
+ ui.validation.textContent=errors.length?errors.join(' '):'Settings are valid. Changes are applied when you press Apply Settings or start a new game.';
+ return{valid:errors.length===0,settings:s}
+}
+function applySettings(){
+ const result=validateSettings();if(!result.valid)return false;
+ settings=result.settings;
+ ui.status.textContent='SETTINGS APPLIED';
+ return true
+}
+function nextSpawnInterval(){
+ const base=60/settings.spawn.perMinute;
+ const low=Math.max(settings.spawn.minInterval,base*.65);
+ const high=Math.min(settings.spawn.maxInterval,base*1.35);
+ return low+Math.random()*Math.max(0,high-low)
+}
+
+function resize(){
+ const r=stage.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);width=r.width;height=r.height;
+ canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.width=width+'px';canvas.style.height=height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
+ if(engine)rebuildPhysics();draw()
+}
+function createEngine(){
+ engine=Engine.create({gravity:{x:0,y:1.05,scale:.001}});engine.positionIterations=8;engine.velocityIterations=6;rebuildPhysics();
+ Events.on(engine,'collisionStart',e=>{for(const p of e.pairs){const s=p.bodyA===barBody?p.bodyB:p.bodyB===barBody?p.bodyA:null;if(s?.plugin?.isShape){const now=performance.now()/1000;s.plugin.touchCount++;s.plugin.lastContactAt=now;if(!s.plugin.firstContactAt){s.plugin.firstContactAt=now;if(sessionData)sessionData.reactionTimes.push(now-s.plugin.spawnedAt)}if(!s.plugin.stabilizationStartedAt)s.plugin.stabilizationStartedAt=now}}});
+ Events.on(engine,'collisionEnd',e=>{for(const p of e.pairs){const s=p.bodyA===barBody?p.bodyB:p.bodyB===barBody?p.bodyA:null;if(s?.plugin?.isShape){s.plugin.touchCount=Math.max(0,s.plugin.touchCount-1);if(s.plugin.touchCount===0)s.plugin.leftContactAt=performance.now()/1000}}})
+}
+function rebuildPhysics(){
+ if(!engine||!width||!height)return;World.clear(engine.world,false);Engine.clear(engine);shapes=[];
+ barBody=Bodies.rectangle(width*bar.x,height*bar.y,width*bar.widthRatio,Math.max(12,height*bar.heightRatio),{isStatic:true,friction:.8,frictionStatic:1,restitution:.12,chamfer:{radius:5},label:'bar'});
+ Body.setAngle(barBody,bar.angle);World.add(engine.world,barBody)
+}
+function reset(){
+ if(!applySettings())return;
+ if(!engine)createEngine();rebuildPhysics();running=true;score=0;level=1;health=5;spawnTimer=.35;particles=[];floatingScores=[];sessionData=newSessionData();bar.x=.5;bar.angle=0;bar.targetAngle=0;
+ ui.message.style.display='none';$('startBtn').textContent='RESTART';hud();last=performance.now();requestAnimationFrame(loop)
+}
+function spawnShape(){
+ const kind=weightedPick(Object.entries(settings.shapeProbabilities));
+ const sizeName=weightedPick(Object.entries(settings.sizes).map(([k,v])=>[k,v.probability]));
+ const cfg=settings.sizes[sizeName],radius=cfg.px,x=width*(.1+Math.random()*.8),y=-radius*2;
+ const color={circle:'#4df6ff',square:'#ff4fcf',triangle:'#ffe05c',diamond:'#6cff8e'}[kind];
+ const plugin={isShape:true,kind,sizeName,color,radius,touchCount:0,stableContact:0,stabilizationStartedAt:0,lastContactAt:0,leftContactAt:0,collected:false,spawnedAt:performance.now()/1000,firstContactAt:0}; if(sessionData)sessionData.spawned++;
+ const opts={friction:.42,frictionStatic:.75,frictionAir:.004,restitution:.3,density:.0012*(1+radius/18),label:kind,plugin};
+ let body;
+ if(kind==='circle')body=Bodies.circle(x,y,radius,opts);
+ else if(kind==='square')body=Bodies.rectangle(x,y,radius*1.65,radius*1.65,{...opts,chamfer:{radius:2}});
+ else if(kind==='triangle')body=Bodies.polygon(x,y,3,radius*1.18,opts);
+ else{body=Bodies.polygon(x,y,4,radius*1.12,opts);Body.setAngle(body,Math.PI/4)}
+ Body.setVelocity(body,{x:(Math.random()-.5)*.8,y:.4+level*.04});Body.setAngularVelocity(body,(Math.random()-.5)*.08);
+ shapes.push(body);World.add(engine.world,body)
+}
+function updateBar(dt){
+ const target=touchDir?bar.x+touchDir*dt*.9:.5+(handX-neutralX)*settings.sensitivity,half=bar.widthRatio/2;
+ bar.x+=(Math.max(half,Math.min(1-half,target))-bar.x)*Math.min(1,dt*10);
+ const max=settings.maxAngle*Math.PI/180,handTarget=Math.max(-max,Math.min(max,(handRoll-neutralRoll)*settings.rotationSensitivity));
+ bar.targetAngle=touchRotation?Math.max(-max,Math.min(max,bar.targetAngle+touchRotation*dt*1.8)):handTarget;
+ bar.angle+=(bar.targetAngle-bar.angle)*Math.min(1,dt*8);
+ Body.setPosition(barBody,{x:width*bar.x,y:height*bar.y});Body.setAngle(barBody,bar.angle);Body.setVelocity(barBody,{x:0,y:0});Body.setAngularVelocity(barBody,0)
+}
+function scoreShape(body,now){
+ const d=body.plugin,cfg=settings.sizes[d.sizeName],elapsed=Math.max(.001,now-d.stabilizationStartedAt);
+ const rawTime=(cfg.validation*settings.time.referenceFactor)/elapsed;
+ const timeMultiplier=Math.max(settings.time.minMultiplier,Math.min(settings.time.maxMultiplier,rawTime));
+ const points=Math.round(settings.shapeScores[d.kind]*cfg.multiplier*timeMultiplier);
+ score+=points;d.collected=true;
+ if(sessionData){sessionData.caught++;sessionData.totalPoints+=points;sessionData.validationTimes.push(elapsed);sessionData.timeMultipliers.push(timeMultiplier);sessionData.shapeStats[d.kind].caught++;sessionData.sizeStats[d.sizeName].caught++;sessionData.events.push({type:'caught',time:now-sessionDataStartSeconds(),shape:d.kind,size:d.sizeName,points,timeMultiplier,validationTime:elapsed})}
+ burst(body.position.x/width,body.position.y/height,d.color);
+ floatingScores.push({x:body.position.x/width,y:body.position.y/height,text:`+${points}  ${d.sizeName.toUpperCase()} ×${timeMultiplier.toFixed(2)}`,color:d.color,life:1});
+ removeShape(body)
+}
+function updateShapes(dt){
+ const now=performance.now()/1000;
+ for(const body of [...shapes]){
+  const d=body.plugin,cfg=settings.sizes[d.sizeName],touching=d.touchCount>0;
+  if(touching){d.stableContact+=dt;d.lastContactAt=now}
+  else if(d.stabilizationStartedAt){
+   const away=now-d.leftContactAt;
+   if(away>settings.time.contactTolerance){d.stableContact=0;d.stabilizationStartedAt=0}
+  }
+  if(d.stableContact>=cfg.validation&&!d.collected){scoreShape(body,now);continue}
+  const m=d.radius*3;
+  if(body.position.y>height+m||body.position.x<-m||body.position.x>width+m){
+   if(sessionData){sessionData.missed++;sessionData.shapeStats[d.kind].missed++;sessionData.sizeStats[d.sizeName].missed++;sessionData.events.push({type:'missed',time:now-sessionDataStartSeconds(),shape:d.kind,size:d.sizeName})}removeShape(body);health--;if(navigator.vibrate)navigator.vibrate(45);if(health<=0){gameOver();return}
+  }
+ }
+}
+function removeShape(b){World.remove(engine.world,b);const i=shapes.indexOf(b);if(i>=0)shapes.splice(i,1)}
+function burst(x,y,color){for(let i=0;i<12;i++)particles.push({x,y,vx:(Math.random()-.5)*.35,vy:(Math.random()-.7)*.35,life:.65,color})}
+function update(dt){
+ level=1+Math.floor(score/1000);spawnTimer-=dt;if(spawnTimer<=0){spawnShape();spawnTimer=nextSpawnInterval()}
+ updateBar(dt);Engine.update(engine,dt*1000);updateShapes(dt);collectClinicalSample();
+ for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=.25*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);
+ for(const f of floatingScores){f.y-=dt*.08;f.life-=dt}floatingScores=floatingScores.filter(f=>f.life>0);hud();if(sessionData&&sessionData.samples.length%20===0)updateClinicalDashboard()
+}
+function gameOver(){running=false;if(sessionData)sessionData.endedAt=new Date().toISOString();best=Math.max(best,score);hud();updateClinicalDashboard();ui.message.textContent='GAME OVER — SCORE '+Math.floor(score);ui.message.style.display='grid';$('startBtn').textContent='RESTART'}
+function hud(){ui.score.textContent=Math.floor(score);ui.best.textContent=Math.floor(best);ui.level.textContent=level;ui.health.textContent=health}
+function drawBody(b){
+ const d=b.plugin,v=b.vertices;ctx.save();ctx.fillStyle=d.color;ctx.strokeStyle='#fff';ctx.lineWidth=1.4;ctx.shadowColor=d.color;ctx.shadowBlur=7;ctx.beginPath();
+ if(b.circleRadius)ctx.arc(b.position.x,b.position.y,b.circleRadius,0,Math.PI*2);else{ctx.moveTo(v[0].x,v[0].y);for(let i=1;i<v.length;i++)ctx.lineTo(v[i].x,v[i].y);ctx.closePath()}ctx.fill();ctx.stroke();ctx.restore();
+ const cfg=settings.sizes[d.sizeName];
+ if(d.stabilizationStartedAt&&d.stableContact>0){
+  const progress=Math.min(1,d.stableContact/cfg.validation),r=d.radius+6;
+  ctx.save();ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(b.position.x,b.position.y,r,-Math.PI/2,Math.PI*1.5);ctx.stroke();
+  ctx.strokeStyle=d.color;ctx.beginPath();ctx.arc(b.position.x,b.position.y,r,-Math.PI/2,-Math.PI/2+Math.PI*2*progress);ctx.stroke();ctx.restore()
+ }
+}
+function draw(){
+ if(!width||!height)return;ctx.clearRect(0,0,width,height);const g=ctx.createLinearGradient(0,0,0,height);g.addColorStop(0,'#10183a');g.addColorStop(1,'#050712');ctx.fillStyle=g;ctx.fillRect(0,0,width,height);
+ ctx.strokeStyle='rgba(77,246,255,.13)';ctx.lineWidth=1;for(let y=0;y<height;y+=36){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(width,y);ctx.stroke()}for(let x=0;x<width;x+=36){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,height);ctx.stroke()}
+ for(const b of shapes)drawBody(b);
+ if(barBody){const v=barBody.vertices;ctx.save();ctx.fillStyle='#ff4fcf';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.shadowColor='#ff4fcf';ctx.shadowBlur=18;ctx.beginPath();ctx.moveTo(v[0].x,v[0].y);for(let i=1;i<v.length;i++)ctx.lineTo(v[i].x,v[i].y);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore()}
+ for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/.65);ctx.fillStyle=p.color;ctx.fillRect(p.x*width,p.y*height,4,4)}
+ for(const f of floatingScores){ctx.globalAlpha=Math.max(0,f.life);ctx.fillStyle=f.color;ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText(f.text,f.x*width,f.y*height)}
+ ctx.globalAlpha=1
+}
+function loop(t){if(!running){draw();return}const dt=Math.min((t-last)/1000,.033);last=t;update(dt);draw();if(running)requestAnimationFrame(loop)}
+function onResults(r){
+ hc.width=video.videoWidth||480;hc.height=video.videoHeight||640;hctx.clearRect(0,0,hc.width,hc.height);let found=false;
+ if(r.multiHandLandmarks)for(let i=0;i<r.multiHandLandmarks.length;i++){const label=r.multiHandedness?.[i]?.label||'',lm=r.multiHandLandmarks[i];drawConnectors(hctx,lm,HAND_CONNECTIONS,{color:'#4df6ff',lineWidth:3});drawLandmarks(hctx,lm,{color:'#fff',radius:2});
+  if(label===settings.hand){const w=lm[0],m=lm[9],ib=lm[5],pb=lm[17];handX=1-(w.x+m.x)/2;let roll=Math.atan2(pb.y-ib.y,pb.x-ib.x);if(settings.hand==='Left')roll+=Math.PI;while(roll>Math.PI)roll-=Math.PI*2;while(roll<-Math.PI)roll+=Math.PI*2;handRoll=-roll;found=true}}
+ ui.status.textContent=found?settings.hand.toUpperCase()+' HAND: MOVE + ROTATE':'SHOW YOUR '+settings.hand.toUpperCase()+' HAND'
+}
+async function startCamera(){
+ $('cameraBtn').disabled=true;ui.status.textContent='LOADING HAND TRACKING...';
+ try{hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f});hands.setOptions({maxNumHands:2,modelComplexity:1,minDetectionConfidence:.65,minTrackingConfidence:.65});hands.onResults(onResults);
+ camera=new Camera(video,{onFrame:async()=>hands.send({image:video}),width:480,height:640,facingMode:'user'});await camera.start();$('cameraBtn').textContent='CAMERA ACTIVE';ui.status.textContent='SHOW YOUR '+settings.hand.toUpperCase()+' HAND'}
+ catch(e){console.error(e);$('cameraBtn').disabled=false;$('cameraBtn').textContent='TRY CAMERA AGAIN';ui.status.textContent='CAMERA FAILED — USE TOUCH'}
+}
+function calibrate(){neutralX=handX;neutralRoll=handRoll;bar.targetAngle=0;ui.status.textContent='CALIBRATED — MOVE AND ROTATE YOUR HAND'}
+
+function sessionDataStartSeconds(){return sessionData?new Date(sessionData.startedAt).getTime()/1000:performance.now()/1000}
+function collectClinicalSample(){
+ if(!sessionData)return;
+ const now=performance.now()/1000;
+ if(now-sessionData.lastSampleAt<1/20)return;
+ const dx=bar.x-sessionData.lastBarX,dir=Math.abs(dx)<.001?0:Math.sign(dx);
+ if(dir&&sessionData.lastMoveDirection&&dir!==sessionData.lastMoveDirection)sessionData.corrections++;
+ if(dir)sessionData.lastMoveDirection=dir;
+ sessionData.samples.push({t:now-sessionDataStartSeconds(),x:bar.x,angle:bar.angle,dx,da:bar.angle-sessionData.lastBarAngle,activeShapes:shapes.length,score});
+ sessionData.lastSampleAt=now;sessionData.lastBarX=bar.x;sessionData.lastBarAngle=bar.angle
+}
+function avg(a){return a.length?a.reduce((s,v)=>s+v,0)/a.length:0}
+function sd(a){if(a.length<2)return 0;const m=avg(a);return Math.sqrt(avg(a.map(v=>(v-m)**2)))}
+function clamp100(v){return Math.max(0,Math.min(100,v))}
+function calculateMetrics(data=sessionData){
+ if(!data)return{};
+ const s=data.samples,angles=s.map(v=>v.angle*180/Math.PI),xs=s.map(v=>v.x),speeds=s.slice(1).map((v,i)=>Math.abs(v.x-s[i].x)/Math.max(.001,v.t-s[i].t));
+ const angularSpeeds=s.slice(1).map((v,i)=>Math.abs(v.angle-s[i].angle)/Math.max(.001,v.t-s[i].t));
+ const rom=angles.length?Math.max(...angles)-Math.min(...angles):0;
+ const catchRate=data.spawned?data.caught/data.spawned*100:0;
+ const meanReaction=avg(data.reactionTimes);
+ const stability=clamp100(100-(sd(angles)*4+sd(xs)*120));
+ const jerk=speeds.slice(1).map((v,i)=>Math.abs(v-speeds[i]));
+ const smoothness=clamp100(100-avg(jerk)*800);
+ const duration=s.length?s.at(-1).t:0;
+ const thirds=Math.max(1,Math.floor(speeds.length/3)),first=avg(speeds.slice(0,thirds)),lastPart=avg(speeds.slice(-thirds));
+ const fatigue=first?((first-lastPart)/first)*100:0;
+ const precision=clamp100(catchRate);
+ const reactionScore=clamp100(100-meanReaction*25);
+ const endurance=clamp100(100-Math.max(0,fatigue));
+ const global=Math.round(avg([stability,smoothness,precision,reactionScore,endurance]));
+ return{duration,catchRate,meanReaction,stability,smoothness,rom,corrections:data.corrections,fatigue,global,meanAngularSpeed:avg(angularSpeeds),angleSd:sd(angles),score:data.totalPoints||score,spawned:data.spawned,caught:data.caught,missed:data.missed}
+}
+function updateClinicalDashboard(){
+ const m=calculateMetrics();
+ $('mCatchRate').textContent=(m.catchRate||0).toFixed(0)+'%';
+ $('mReaction').textContent=m.meanReaction?m.meanReaction.toFixed(2)+' s':'—';
+ $('mStability').textContent=Math.round(m.stability||0);
+ $('mSmoothness').textContent=Math.round(m.smoothness||0);
+ $('mRom').textContent=(m.rom||0).toFixed(1)+'°';
+ $('mCorrections').textContent=m.corrections||0;
+ $('mFatigue').textContent=(m.fatigue||0).toFixed(1)+'%';
+ $('mGlobal').textContent=m.global||0;
+ renderCharts()
+}
+function destroyCharts(){Object.values(charts).forEach(c=>c?.destroy());charts={}}
+function renderCharts(){
+ if(typeof Chart==='undefined'||!sessionData)return;destroyCharts();
+ const samples=sessionData.samples.filter((_,i)=>i%5===0),saved=loadSessions();
+ const common={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:true}}};
+ charts.performance=new Chart($('performanceChart'),{type:'line',data:{labels:samples.map(v=>v.t.toFixed(1)),datasets:[{label:'Score',data:samples.map(v=>v.score)}]},options:{...common,plugins:{title:{display:true,text:'Score during session'},legend:{display:false}},scales:{x:{title:{display:true,text:'Time (s)'}}}}});
+ charts.angle=new Chart($('angleChart'),{type:'line',data:{labels:samples.map(v=>v.t.toFixed(1)),datasets:[{label:'Wrist/bar angle (°)',data:samples.map(v=>(v.angle*180/Math.PI).toFixed(2))}]},options:{...common,plugins:{title:{display:true,text:'Wrist rotation profile'},legend:{display:false}}}});
+ const labels=['Circle','Square','Triangle','Diamond'];
+ charts.distribution=new Chart($('distributionChart'),{type:'bar',data:{labels,datasets:[{label:'Caught',data:['circle','square','triangle','diamond'].map(k=>sessionData.shapeStats[k].caught)},{label:'Missed',data:['circle','square','triangle','diamond'].map(k=>sessionData.shapeStats[k].missed)}]},options:{...common,plugins:{title:{display:true,text:'Performance by shape'}}}});
+ charts.progress=new Chart($('progressChart'),{type:'line',data:{labels:saved.slice(-10).map((v,i)=>v.dateLabel||('Session '+(i+1))),datasets:[{label:'Functional score',data:saved.slice(-10).map(v=>v.metrics.global)},{label:'Stability',data:saved.slice(-10).map(v=>Math.round(v.metrics.stability))}]},options:{...common,plugins:{title:{display:true,text:'Progress across saved sessions'}}}})
+}
+function sessionRecord(){
+ const metrics=calculateMetrics(),now=new Date();
+ return{id:crypto.randomUUID?.()||String(Date.now()),date:now.toISOString(),dateLabel:now.toLocaleDateString(),patient:{id:$('patientId').value.trim(),name:$('patientName').value.trim(),therapist:$('therapistName').value.trim(),testedHand:$('testedHand').value,diagnosis:$('diagnosis').value.trim(),notes:$('sessionNotes').value.trim()},settings:structuredClone(settings),metrics,data:sessionData}
+}
+function loadSessions(){try{return JSON.parse(localStorage.getItem('handRehabSessions')||'[]')}catch{return[]}}
+function saveSession(){
+ if(!sessionData||!sessionData.samples.length){ui.status.textContent='COMPLETE A SESSION BEFORE SAVING';return}
+ if(!sessionData.endedAt)sessionData.endedAt=new Date().toISOString();
+ const records=loadSessions();records.push(sessionRecord());localStorage.setItem('handRehabSessions',JSON.stringify(records.slice(-100)));renderHistory();renderCharts();ui.status.textContent='SESSION SAVED LOCALLY'
+}
+function renderHistory(){
+ const body=$('sessionHistoryBody'),records=loadSessions().slice(-10).reverse();body.innerHTML='';
+ for(const r of records){const tr=document.createElement('tr');tr.innerHTML=`<td>${new Date(r.date).toLocaleString()}</td><td>${r.patient.id||r.patient.name||'—'}</td><td>${Math.round(r.metrics.score)}</td><td>${r.metrics.catchRate.toFixed(0)}%</td><td>${Math.round(r.metrics.stability)}</td><td>${r.metrics.rom.toFixed(1)}°</td>`;body.appendChild(tr)}
+}
+function downloadBlob(content,type,name){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function exportJSON(){if(!sessionData)return;downloadBlob(JSON.stringify(sessionRecord(),null,2),'application/json','hand-rehab-session.json')}
+function exportCSV(){
+ if(!sessionData)return;const rows=[['timestamp_s','hand_x','wrist_angle_deg','delta_x','delta_angle_rad','active_shapes','score'],...sessionData.samples.map(v=>[v.t,v.x,v.angle*180/Math.PI,v.dx,v.da,v.activeShapes,v.score])];
+ downloadBlob(rows.map(r=>r.join(',')).join('\n'),'text/csv','hand-rehab-raw-data.csv')
+}
+async function exportPDF(){
+ if(!sessionData)return;
+ updateClinicalDashboard();
+ const {jsPDF}=window.jspdf,pdf=new jsPDF({unit:'mm',format:'a4'}),m=calculateMetrics(),rec=sessionRecord();
+ pdf.setFontSize(18);pdf.text('Hand Rehabilitation Session Report',15,16);
+ pdf.setFontSize(10);pdf.text(`Date: ${new Date(rec.date).toLocaleString()}`,15,24);pdf.text(`Patient: ${rec.patient.id||'—'} ${rec.patient.name||''}`,15,30);pdf.text(`Therapist: ${rec.patient.therapist||'—'} | Tested hand: ${rec.patient.testedHand}`,15,36);pdf.text(`Clinical context: ${rec.patient.diagnosis||'—'}`,15,42);
+ pdf.setFontSize(13);pdf.text('Session outcomes',15,52);pdf.setFontSize(10);
+ const lines=[`Total score: ${Math.round(m.score)}`,`Shapes: ${m.caught} caught / ${m.missed} missed (${m.catchRate.toFixed(1)}% catch rate)`,`Mean reaction time: ${m.meanReaction?m.meanReaction.toFixed(2)+' s':'—'}`,`Stability index: ${Math.round(m.stability)}/100`,`Smoothness index: ${Math.round(m.smoothness)}/100`,`Wrist rotation ROM: ${m.rom.toFixed(1)}°`,`Direction corrections: ${m.corrections}`,`Fatigue change: ${m.fatigue.toFixed(1)}%`,`Functional performance index: ${m.global}/100`];
+ lines.forEach((line,i)=>pdf.text(line,18,60+i*6));
+ pdf.setFontSize(8);pdf.text('App-derived indices support within-task monitoring and are not validated diagnostic measures.',15,116);
+ let y=124;
+ for(const id of ['performanceChart','angleChart','distributionChart','progressChart']){const c=$(id);if(c&&c.width){if(y>225){pdf.addPage();y=18}pdf.addImage(c.toDataURL('image/png',1),'PNG',15,y,180,65);y+=72}}
+ pdf.save(`hand-rehab-report-${rec.patient.id||Date.now()}.pdf`)
+}
+
+$('cameraBtn').addEventListener('click',startCamera);$('calibrateBtn').addEventListener('click',calibrate);$('startBtn').addEventListener('click',reset);$('applySettingsBtn').addEventListener('click',applySettings);
+$('resetSettingsBtn').addEventListener('click',()=>{settings=structuredClone(defaults);writeSettings(settings);ui.status.textContent='DEFAULT SETTINGS RESTORED'});
+$('saveSessionBtn').addEventListener('click',saveSession);
+$('exportPdfBtn').addEventListener('click',exportPDF);
+$('exportCsvBtn').addEventListener('click',exportCSV);
+$('exportJsonBtn').addEventListener('click',exportJSON);
+$('clearSessionsBtn').addEventListener('click',()=>{if(confirm('Delete all locally saved sessions?')){localStorage.removeItem('handRehabSessions');renderHistory();renderCharts()}});
+
+document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',validateSettings));
+$('leftBtn').addEventListener('pointerdown',()=>touchDir=-1);$('rightBtn').addEventListener('pointerdown',()=>touchDir=1);$('rotateLeftBtn').addEventListener('pointerdown',()=>touchRotation=-1);$('rotateRightBtn').addEventListener('pointerdown',()=>touchRotation=1);
+[$('leftBtn'),$('rightBtn')].forEach(b=>['pointerup','pointercancel','pointerleave'].forEach(e=>b.addEventListener(e,()=>touchDir=0)));
+[$('rotateLeftBtn'),$('rotateRightBtn')].forEach(b=>['pointerup','pointercancel','pointerleave'].forEach(e=>b.addEventListener(e,()=>touchRotation=0)));
+stage.addEventListener('pointermove',e=>{if(e.buttons){const r=stage.getBoundingClientRect();bar.x=Math.max(bar.widthRatio/2,Math.min(1-bar.widthRatio/2,(e.clientX-r.left)/r.width))}});
+window.addEventListener('resize',resize);window.addEventListener('beforeunload',()=>camera?.stop?.());
+writeSettings(settings);resize();createEngine();hud();renderHistory();draw();
+</script>
+</body>
+</html>

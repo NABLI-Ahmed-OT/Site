@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101827" />
+  <title>Odd or Even - Hand Game</title>
+
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111c30;
+      --panel-2: #17243b;
+      --text: #f5f7fb;
+      --muted: #aab5c6;
+      --accent: #36d399;
+      --danger: #fb7185;
+      --warning: #fbbf24;
+      --line: rgba(255,255,255,.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: radial-gradient(circle at top, #172a46 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      width: min(100%, 720px);
+      margin: 0 auto;
+      padding: max(16px, env(safe-area-inset-top))
+               16px
+               max(20px, env(safe-area-inset-bottom));
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.55rem, 6vw, 2.25rem);
+      text-align: center;
+    }
+
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+      text-align: center;
+      font-size: .95rem;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .score {
+      padding: 10px 8px;
+      background: rgba(17, 28, 48, .9);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      text-align: center;
+    }
+
+    .score strong {
+      display: block;
+      font-size: 1.5rem;
+    }
+
+    .score span {
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .choice-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .choice-btn {
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+
+    .choice-btn.active {
+      color: #032116;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .camera-card {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 3 / 4;
+      max-height: 60dvh;
+      background: #05080d;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35);
+    }
+
+    video,
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    video { opacity: .92; }
+
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px;
+      pointer-events: none;
+    }
+
+    .status {
+      align-self: center;
+      max-width: 95%;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(3, 7, 18, .75);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+      text-align: center;
+      font-size: .88rem;
+    }
+
+    .round-display {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(3, 7, 18, .78);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+
+    .number-box {
+      text-align: center;
+    }
+
+    .number-box strong {
+      display: block;
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    .number-box span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: .75rem;
+    }
+
+    .plus {
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 1.2rem;
+    }
+
+    .result {
+      margin-top: 12px;
+      min-height: 62px;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 800;
+      background: rgba(17, 28, 48, .92);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .result.win { border-color: var(--accent); color: var(--accent); }
+    .result.lose { border-color: var(--danger); color: var(--danger); }
+    .result.draw { border-color: var(--warning); color: var(--warning); }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      min-height: 50px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .primary {
+      color: #032116;
+      background: var(--accent);
+    }
+
+    .secondary {
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .fallback {
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .fallback.visible { display: grid; }
+
+    .fallback button {
+      min-height: 54px;
+      font-size: 1.2rem;
+    }
+
+    details {
+      margin-top: 12px;
+      padding: 12px 14px;
+      color: var(--muted);
+      background: rgba(17, 28, 48, .8);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      font-size: .88rem;
+    }
+
+    summary {
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    @media (orientation: landscape) and (max-height: 600px) {
+      .app { width: min(100%, 920px); }
+      .camera-card { aspect-ratio: 16 / 9; max-height: 64dvh; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <h1>Odd or Even</h1>
+    <p class="subtitle">
+      Choose Odd or Even, then show 0 to 5 fingers.
+    </p>
+
+    <section class="scoreboard" aria-label="Score">
+      <div class="score"><strong id="playerScore">0</strong><span>You</span></div>
+      <div class="score"><strong id="roundScore">0</strong><span>Rounds</span></div>
+      <div class="score"><strong id="computerScore">0</strong><span>Computer</span></div>
+    </section>
+
+    <section class="choice-panel" aria-label="Choix pair ou impair">
+      <button id="evenBtn" class="choice-btn active" type="button">EVEN</button>
+      <button id="oddBtn" class="choice-btn" type="button">ODD</button>
+    </section>
+
+    <section class="camera-card">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="canvas"></canvas>
+
+      <div class="camera-overlay">
+        <div id="status" class="status">Tap “Start camera” to begin</div>
+
+        <div class="round-display">
+          <div class="number-box">
+            <strong id="playerNumber">?</strong>
+            <span>Your fingers</span>
+          </div>
+
+          <div class="plus">+</div>
+
+          <div class="number-box">
+            <strong id="computerNumber">?</strong>
+            <span>Computer</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="result" class="result" aria-live="polite">
+      You selected EVEN
+    </div>
+
+    <section class="controls">
+      <button id="startBtn" class="primary" type="button">Start camera</button>
+      <button id="resetBtn" class="secondary" type="button">Reset score</button>
+    </section>
+
+    <section id="fallback" class="fallback" aria-label="Contrôles tactiles">
+      <button class="secondary finger-btn" data-number="0" type="button">0</button>
+      <button class="secondary finger-btn" data-number="1" type="button">1</button>
+      <button class="secondary finger-btn" data-number="2" type="button">2</button>
+      <button class="secondary finger-btn" data-number="3" type="button">3</button>
+      <button class="secondary finger-btn" data-number="4" type="button">4</button>
+      <button class="secondary finger-btn" data-number="5" type="button">5</button>
+    </section>
+
+    <details>
+      <summary>How to play</summary>
+      <p>
+        Choose ODD or EVEN. Show 0 to 5 fingers to the camera and
+        keep your hand stable for about one second. The computer also chooses
+        a number between 0 and 5. Both numbers are added together.
+      </p>
+      <p>
+        If the total matches your choice, you win. Otherwise, the computer wins.
+        Camera access generally requires HTTPS or localhost.
+      </p>
+    </details>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <script>
+    "use strict";
+
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const evenBtn = document.getElementById("evenBtn");
+    const oddBtn = document.getElementById("oddBtn");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const fallback = document.getElementById("fallback");
+
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+    const playerNumberEl = document.getElementById("playerNumber");
+    const computerNumberEl = document.getElementById("computerNumber");
+
+    const playerScoreEl = document.getElementById("playerScore");
+    const roundScoreEl = document.getElementById("roundScore");
+    const computerScoreEl = document.getElementById("computerScore");
+
+    let selectedParity = "even";
+    let scores = { player: 0, computer: 0, rounds: 0 };
+
+    let camera = null;
+    let hands = null;
+    let lastDetectedNumber = null;
+    let stableSince = 0;
+    let roundLocked = false;
+
+    const HOLD_TIME_MS = 900;
+    const ROUND_COOLDOWN_MS = 1700;
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function fingerExtended(landmarks, tip, pip, mcp) {
+      const wrist = landmarks[0];
+      return (
+        distance(landmarks[tip], wrist) > distance(landmarks[pip], wrist) * 1.05 &&
+        distance(landmarks[tip], wrist) > distance(landmarks[mcp], wrist) * 1.16
+      );
+    }
+
+    function thumbExtended(landmarks) {
+      const wrist = landmarks[0];
+      const thumbTip = landmarks[4];
+      const thumbIp = landmarks[3];
+      const indexMcp = landmarks[5];
+
+      return (
+        distance(thumbTip, wrist) > distance(thumbIp, wrist) * 1.08 &&
+        distance(thumbTip, indexMcp) > distance(thumbIp, indexMcp) * 1.15
+      );
+    }
+
+    function countFingers(landmarks) {
+      const thumb = thumbExtended(landmarks);
+      const index = fingerExtended(landmarks, 8, 6, 5);
+      const middle = fingerExtended(landmarks, 12, 10, 9);
+      const ring = fingerExtended(landmarks, 16, 14, 13);
+      const pinky = fingerExtended(landmarks, 20, 18, 17);
+
+      return [thumb, index, middle, ring, pinky].filter(Boolean).length;
+    }
+
+    function setParity(parity) {
+      selectedParity = parity;
+
+      evenBtn.classList.toggle("active", parity === "even");
+      oddBtn.classList.toggle("active", parity === "odd");
+
+      resultEl.className = "result";
+      resultEl.textContent =
+        parity === "even" ? "You selected EVEN" : "Vous jouez Impair";
+    }
+
+    function updateScores() {
+      playerScoreEl.textContent = scores.player;
+      computerScoreEl.textContent = scores.computer;
+      roundScoreEl.textContent = scores.rounds;
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function showFallback(message) {
+      fallback.classList.add("visible");
+      setStatus(message || "Utilisez les boutons tactiles");
+    }
+
+    function playRound(playerNumber) {
+      if (roundLocked) return;
+
+      roundLocked = true;
+
+      const computerNumber = Math.floor(Math.random() * 6);
+      const total = playerNumber + computerNumber;
+      const resultParity = total % 2 === 0 ? "even" : "odd";
+      const playerWins = resultParity === selectedParity;
+
+      scores.rounds++;
+
+      playerNumberEl.textContent = playerNumber;
+      computerNumberEl.textContent = computerNumber;
+
+      if (playerWins) {
+        scores.player++;
+        resultEl.className = "result win";
+        resultEl.textContent =
+          `${playerNumber} + ${computerNumber} = ${total} : ` +
+          `${resultParity === "even" ? "EVEN" : "IMEVEN"} — YOU WIN!`;
+      } else {
+        scores.computer++;
+        resultEl.className = "result lose";
+        resultEl.textContent =
+          `${playerNumber} + ${computerNumber} = ${total} : ` +
+          `${resultParity === "even" ? "EVEN" : "IMEVEN"} — COMPUTER WINS.`;
+      }
+
+      updateScores();
+      setStatus("Next round…");
+
+      if (navigator.vibrate) {
+        navigator.vibrate(playerWins ? [70, 40, 70] : 70);
+      }
+
+      setTimeout(() => {
+        roundLocked = false;
+        lastDetectedNumber = null;
+        stableSince = 0;
+        playerNumberEl.textContent = "?";
+        computerNumberEl.textContent = "?";
+        setStatus("Show 0 to 5 fingers");
+      }, ROUND_COOLDOWN_MS);
+    }
+
+    function resizeCanvas() {
+      const width = video.videoWidth || 720;
+      const height = video.videoHeight || 1280;
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    }
+
+    function onResults(results) {
+      resizeCanvas();
+
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+      let detectedNumber = null;
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+
+        drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+          color: "#36d399",
+          lineWidth: 4
+        });
+
+        drawLandmarks(ctx, landmarks, {
+          color: "#ffffff",
+          lineWidth: 2,
+          radius: 3
+        });
+
+        detectedNumber = countFingers(landmarks);
+      }
+
+      ctx.restore();
+
+      if (roundLocked) return;
+
+      if (detectedNumber === null) {
+        playerNumberEl.textContent = "?";
+        lastDetectedNumber = null;
+        stableSince = 0;
+        setStatus("Keep one hand visible");
+        return;
+      }
+
+      playerNumberEl.textContent = detectedNumber;
+
+      if (detectedNumber !== lastDetectedNumber) {
+        lastDetectedNumber = detectedNumber;
+        stableSince = performance.now();
+        setStatus(`Hold ${detectedNumber} finger(s) steady…`);
+        return;
+      }
+
+      const heldFor = performance.now() - stableSince;
+      const remaining = Math.max(0, HOLD_TIME_MS - heldFor);
+
+      if (remaining > 0) {
+        setStatus(`Hold steady… ${Math.ceil(remaining / 100) / 10}s`);
+      } else {
+        playRound(detectedNumber);
+      }
+    }
+
+    async function startCamera() {
+      startBtn.disabled = true;
+      setStatus("Loading hand recognition…");
+
+      try {
+        if (!window.Hands || !window.Camera) {
+          throw new Error("Hand-recognition library did not load.");
+        }
+
+        hands = new Hands({
+          locateFile: file =>
+            "https://cdn.jsdelivr.net/npm/@mediapipe/hands/" + file
+        });
+
+        hands.setOptions({
+          maxNumHands: 1,
+          modelComplexity: 1,
+          minDetectionConfidence: 0.65,
+          minTrackingConfidence: 0.65
+        });
+
+        hands.onResults(onResults);
+
+        camera = new Camera(video, {
+          onFrame: async () => {
+            if (hands) {
+              await hands.send({ image: video });
+            }
+          },
+          width: 720,
+          height: 1280,
+          facingMode: "user"
+        });
+
+        await camera.start();
+
+        startBtn.textContent = "Camera active";
+        setStatus("Show 0 to 5 fingers");
+      } catch (error) {
+        console.error(error);
+        startBtn.disabled = false;
+        startBtn.textContent = "Try camera again";
+        showFallback(
+          "Camera unavailable. Allow camera permission or use touch controls."
+        );
+      }
+    }
+
+    evenBtn.addEventListener("click", () => setParity("even"));
+    oddBtn.addEventListener("click", () => setParity("odd"));
+    startBtn.addEventListener("click", startCamera);
+
+    resetBtn.addEventListener("click", () => {
+      scores = { player: 0, computer: 0, rounds: 0 };
+      updateScores();
+
+      playerNumberEl.textContent = "?";
+      computerNumberEl.textContent = "?";
+      resultEl.className = "result";
+      resultEl.textContent =
+        selectedParity === "even" ? "You selected EVEN" : "Vous jouez Impair";
+    });
+
+    document.querySelectorAll(".finger-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        playRound(Number(button.dataset.number));
+      });
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (camera && typeof camera.stop === "function") {
+        camera.stop();
+      }
+    });
+  </script>
+</body>
+</html>

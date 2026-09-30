@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maze Design Studio</title>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #eef2f4;
+      --panel: #ffffff;
+      --text: #172126;
+      --muted: #637079;
+      --accent: #1f8f64;
+      --accent-dark: #146a49;
+      --border: #d8e0e4;
+      --danger: #b53b3b;
+      --shadow: 0 12px 30px rgba(20, 40, 50, 0.09);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body.dark {
+      --bg: #101719;
+      --panel: #182225;
+      --text: #edf4f1;
+      --muted: #aab7b2;
+      --border: #314044;
+      --shadow: 0 12px 30px rgba(0,0,0,.25);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(300px, 370px) 1fr;
+      min-height: 100vh;
+    }
+
+    aside {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 18px;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+
+    main {
+      padding: 20px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 4px;
+    }
+
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    details {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 12px 13px;
+      font-weight: 700;
+      user-select: none;
+      background: rgba(31, 143, 100, 0.06);
+    }
+
+    .section {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 650;
+      color: var(--muted);
+    }
+
+    input, select, button, textarea {
+      font: inherit;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    input[type="range"] { width: 100%; }
+    input[type="color"] {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      padding: 2px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .check input { transform: scale(1.1); }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 9px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    .primary { background: var(--accent); color: white; }
+    .primary:hover { background: var(--accent-dark); }
+    .secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .danger { background: var(--danger); color: white; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      align-items: center;
+    }
+
+    .toolbar button { min-width: 110px; }
+    .spacer { flex: 1; }
+
+    .canvas-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      min-height: 400px;
+      display: grid;
+      place-items: center;
+      overflow: auto;
+      flex: 1;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+      background: white;
+      touch-action: none;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.05);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(100px, 1fr));
+      gap: 9px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 18px;
+      margin-top: 2px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .hint {
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(31,143,100,.12);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .range-line {
+      display: grid;
+      grid-template-columns: 1fr 44px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .range-value {
+      text-align: center;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 5px;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      aside {
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .stats { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      main { padding: 10px; }
+      aside { padding: 12px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .toolbar button { min-width: auto; flex: 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>Maze Design Studio</h1>
+    <p class="subtitle">Generate, customize, analyze, solve and export printable mazes.</p>
+
+    <details open>
+      <summary>Maze structure</summary>
+      <div class="section">
+        <div class="row">
+          <label>Rows
+            <input id="rows" type="number" min="5" max="100" value="25">
+          </label>
+          <label>Columns
+            <input id="cols" type="number" min="5" max="100" value="35">
+          </label>
+        </div>
+
+        <label>Algorithm
+          <select id="algorithm">
+            <option value="dfs">Recursive Backtracker</option>
+            <option value="prim">Randomized Prim</option>
+            <option value="kruskal">Randomized Kruskal</option>
+          </select>
+        </label>
+
+        <div class="row">
+          <label>Maze mode
+            <select id="mode">
+              <option value="perfect">Perfect maze</option>
+              <option value="braided">Braided maze</option>
+              <option value="looped">Looped maze</option>
+            </select>
+          </label>
+          <label>Preset
+            <select id="preset">
+              <option value="">Custom</option>
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
+              <option value="kids">Children</option>
+              <option value="expert">Expert</option>
+            </select>
+          </label>
+        </div>
+
+        <label>Seed
+          <div class="row">
+            <input id="seed" type="text" value="maze-2026">
+            <button id="randomSeed" class="secondary">Random</button>
+          </div>
+        </label>
+
+        <label>Horizontal / vertical bias
+          <div class="range-line">
+            <input id="bias" type="range" min="-100" max="100" value="0">
+            <div id="biasValue" class="range-value">0</div>
+          </div>
+        </label>
+
+        <label>Loop / braid amount
+          <div class="range-line">
+            <input id="loops" type="range" min="0" max="100" value="25">
+            <div id="loopsValue" class="range-value">25</div>
+          </div>
+        </label>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Entrance, exit and solution</summary>
+      <div class="section">
+        <div class="row">
+          <label>Entrance side
+            <select id="entranceSide">
+              <option value="left">Left</option>
+              <option value="top">Top</option>
+              <option value="bottom">Bottom</option>
+              <option value="right">Right</option>
+              <option value="random">Random</option>
+            </select>
+          </label>
+          <label>Exit side
+            <select id="exitSide">
+              <option value="right">Right</option>
+              <option value="bottom">Bottom</option>
+              <option value="top">Top</option>
+              <option value="left">Left</option>
+              <option value="random">Random</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="check"><input id="maximizeDistance" type="checkbox" checked> Maximize entrance-to-exit distance</label>
+        <label class="check"><input id="showSolution" type="checkbox"> Show solution path</label>
+        <label class="check"><input id="showGrid" type="checkbox"> Show cell grid</label>
+        <label class="check"><input id="showLabels" type="checkbox" checked> Show START / EXIT labels</label>
+      </div>
+    </details>
+
+    <details>
+      <summary>Appearance</summary>
+      <div class="section">
+        <div class="row">
+          <label>Cell size
+            <input id="cellSize" type="number" min="5" max="60" value="20">
+          </label>
+          <label>Wall thickness
+            <input id="wallWidth" type="number" min="1" max="12" value="3">
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Background
+            <input id="bgColor" type="color" value="#ffffff">
+          </label>
+          <label>Wall
+            <input id="wallColor" type="color" value="#162328">
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Start
+            <input id="startColor" type="color" value="#45b97c">
+          </label>
+          <label>Exit
+            <input id="exitColor" type="color" value="#e85d5d">
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Solution
+            <input id="solutionColor" type="color" value="#2d70d6">
+          </label>
+          <label>Solution width
+            <input id="solutionWidth" type="number" min="1" max="20" value="5">
+          </label>
+        </div>
+
+        <label class="check"><input id="darkMode" type="checkbox"> Dark interface</label>
+      </div>
+    </details>
+
+    <details>
+      <summary>Worksheet</summary>
+      <div class="section">
+        <label>Title
+          <input id="title" type="text" value="Find the Exit">
+        </label>
+        <label>Instructions
+          <textarea id="instructions" rows="2">Trace a path from START to EXIT without crossing the walls.</textarea>
+        </label>
+        <div class="row">
+          <label>Participant
+            <input id="participant" type="text" placeholder="Name">
+          </label>
+          <label>Maze ID
+            <input id="mazeId" type="text" value="MZ-001">
+          </label>
+        </div>
+        <label class="check"><input id="includeWorksheet" type="checkbox" checked> Include worksheet header in export</label>
+      </div>
+    </details>
+
+    <details>
+      <summary>Interactive solving</summary>
+      <div class="section">
+        <label class="check"><input id="interactive" type="checkbox"> Enable mouse/touch solving</label>
+        <label class="check"><input id="collision" type="checkbox" checked> Count wall collisions</label>
+        <div class="buttons">
+          <button id="resetRun" class="secondary">Reset run</button>
+          <button id="hintButton" class="secondary">Show hint</button>
+        </div>
+        <p class="hint">In solving mode, drag from the green start cell through open passages. Keyboard arrows also work.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Project and export</summary>
+      <div class="section">
+        <div class="buttons">
+          <button id="saveProject" class="secondary">Save JSON</button>
+          <button id="loadProjectButton" class="secondary">Load JSON</button>
+          <input id="loadProject" type="file" accept=".json" hidden>
+          <button id="exportPng" class="secondary">Export PNG</button>
+          <button id="exportPdf" class="secondary">Export PDF</button>
+          <button id="printButton" class="secondary">Print</button>
+          <button id="copySeed" class="secondary">Copy seed</button>
+        </div>
+      </div>
+    </details>
+
+    <div class="buttons">
+      <button id="generate" class="primary">Generate maze</button>
+      <button id="regenerate" class="secondary">Same seed</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="toolbar">
+      <span class="badge" id="difficultyBadge">Difficulty: —</span>
+      <button id="toggleSolution" class="secondary">Toggle solution</button>
+      <button id="newSeed" class="secondary">New seed + generate</button>
+      <div class="spacer"></div>
+      <span class="hint">Tip: use the same seed to reproduce a maze exactly.</span>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="mazeCanvas" width="900" height="650"></canvas>
+    </div>
+
+    <section class="stats">
+      <div class="stat"><span>Total cells</span><strong id="statCells">0</strong></div>
+      <div class="stat"><span>Solution length</span><strong id="statPath">0</strong></div>
+      <div class="stat"><span>Turns</span><strong id="statTurns">0</strong></div>
+      <div class="stat"><span>Dead ends</span><strong id="statDeadEnds">0</strong></div>
+      <div class="stat"><span>Junctions</span><strong id="statJunctions">0</strong></div>
+      <div class="stat"><span>Collisions</span><strong id="statCollisions">0</strong></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $("mazeCanvas");
+  const ctx = canvas.getContext("2d");
+
+  let maze = [];
+  let solution = [];
+  let start = {r:0,c:0,side:"left"};
+  let exit = {r:0,c:0,side:"right"};
+  let player = null;
+  let collisions = 0;
+  let dragging = false;
+  let hintIndex = -1;
+
+  const dirs = [
+    {dr:-1, dc:0, wall:0, opposite:2, name:"N"},
+    {dr:0, dc:1, wall:1, opposite:3, name:"E"},
+    {dr:1, dc:0, wall:2, opposite:0, name:"S"},
+    {dr:0, dc:-1, wall:3, opposite:1, name:"W"},
+  ];
+
+  function hashSeed(str) {
+    let h = 2166136261 >>> 0;
+    for (let i=0;i<str.length;i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function mulberry32(a) {
+    return function() {
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  let rng = Math.random;
+  const randInt = n => Math.floor(rng() * n);
+  function shuffle(arr) {
+    for (let i=arr.length-1;i>0;i--) {
+      const j = randInt(i+1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function settings() {
+    return {
+      rows: clamp(+$("rows").value, 5, 100),
+      cols: clamp(+$("cols").value, 5, 100),
+      algorithm: $("algorithm").value,
+      mode: $("mode").value,
+      seed: $("seed").value || "maze",
+      bias: +$("bias").value,
+      loops: +$("loops").value,
+      entranceSide: $("entranceSide").value,
+      exitSide: $("exitSide").value,
+      maximizeDistance: $("maximizeDistance").checked,
+      cellSize: clamp(+$("cellSize").value, 5, 60),
+      wallWidth: clamp(+$("wallWidth").value, 1, 12),
+      bgColor: $("bgColor").value,
+      wallColor: $("wallColor").value,
+      startColor: $("startColor").value,
+      exitColor: $("exitColor").value,
+      solutionColor: $("solutionColor").value,
+      solutionWidth: clamp(+$("solutionWidth").value, 1, 20),
+      showSolution: $("showSolution").checked,
+      showGrid: $("showGrid").checked,
+      showLabels: $("showLabels").checked
+    };
+  }
+
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+  function createGrid(rows, cols) {
+    return Array.from({length:rows}, (_,r) =>
+      Array.from({length:cols}, (_,c) => ({
+        r,c,walls:[true,true,true,true], visited:false
+      }))
+    );
+  }
+
+  function valid(r,c,s) {
+    return r>=0 && c>=0 && r<s.rows && c<s.cols;
+  }
+
+  function weightedDirections() {
+    const bias = +$("bias").value;
+    const weighted = [];
+    for (const d of dirs) {
+      const horizontal = d.dc !== 0;
+      let weight = 10;
+      if (bias > 0 && horizontal) weight += Math.round(bias/8);
+      if (bias < 0 && !horizontal) weight += Math.round(-bias/8);
+      for (let i=0;i<weight;i++) weighted.push(d);
+    }
+    return shuffle(weighted);
+  }
+
+  function carve(a,b,d) {
+    a.walls[d.wall] = false;
+    b.walls[d.opposite] = false;
+  }
+
+  function generateDFS(s) {
+    const grid = createGrid(s.rows,s.cols);
+    const stack = [grid[randInt(s.rows)][randInt(s.cols)]];
+    stack[0].visited = true;
+
+    while(stack.length) {
+      const current = stack[stack.length-1];
+      const options = [];
+      const used = new Set();
+      for (const d of weightedDirections()) {
+        const key = d.name;
+        if (used.has(key)) continue;
+        used.add(key);
+        const nr=current.r+d.dr, nc=current.c+d.dc;
+        if (valid(nr,nc,s) && !grid[nr][nc].visited) options.push(d);
+      }
+      if (!options.length) { stack.pop(); continue; }
+      const d = options[randInt(options.length)];
+      const next = grid[current.r+d.dr][current.c+d.dc];
+      carve(current,next,d);
+      next.visited = true;
+      stack.push(next);
+    }
+    return grid;
+  }
+
+  function generatePrim(s) {
+    const grid=createGrid(s.rows,s.cols);
+    const frontier=[];
+    const startCell=grid[randInt(s.rows)][randInt(s.cols)];
+    startCell.visited=true;
+
+    function addFrontier(cell){
+      for(const d of dirs){
+        const nr=cell.r+d.dr,nc=cell.c+d.dc;
+        if(valid(nr,nc,s)&&!grid[nr][nc].visited) frontier.push({from:cell,to:grid[nr][nc],d});
+      }
+    }
+
+    addFrontier(startCell);
+    while(frontier.length){
+      const i=randInt(frontier.length);
+      const edge=frontier.splice(i,1)[0];
+      if(edge.to.visited) continue;
+      carve(edge.from,edge.to,edge.d);
+      edge.to.visited=true;
+      addFrontier(edge.to);
+    }
+    return grid;
+  }
+
+  function generateKruskal(s) {
+    const grid=createGrid(s.rows,s.cols);
+    const parent=Array.from({length:s.rows*s.cols},(_,i)=>i);
+    const rank=Array(s.rows*s.cols).fill(0);
+    const idx=(r,c)=>r*s.cols+c;
+
+    function find(x){ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; }
+    function union(a,b){
+      a=find(a);b=find(b);
+      if(a===b)return false;
+      if(rank[a]<rank[b])[a,b]=[b,a];
+      parent[b]=a;
+      if(rank[a]===rank[b])rank[a]++;
+      return true;
+    }
+
+    const edges=[];
+    for(let r=0;r<s.rows;r++)for(let c=0;c<s.cols;c++){
+      if(c+1<s.cols)edges.push({a:grid[r][c],b:grid[r][c+1],d:dirs[1]});
+      if(r+1<s.rows)edges.push({a:grid[r][c],b:grid[r+1][c],d:dirs[2]});
+    }
+    shuffle(edges);
+
+    for(const e of edges){
+      if(union(idx(e.a.r,e.a.c),idx(e.b.r,e.b.c))) carve(e.a,e.b,e.d);
+    }
+    return grid;
+  }
+
+  function addLoops(grid,s) {
+    if(s.mode==="perfect") return;
+    const intensity=s.loops/100;
+    const candidates=[];
+    for(let r=0;r<s.rows;r++)for(let c=0;c<s.cols;c++){
+      for(const d of [dirs[1],dirs[2]]){
+        const nr=r+d.dr,nc=c+d.dc;
+        if(valid(nr,nc,s)&&grid[r][c].walls[d.wall]) candidates.push({r,c,d});
+      }
+    }
+    shuffle(candidates);
+    let count=Math.floor(candidates.length * intensity * (s.mode==="braided" ? .35 : .18));
+    for(const item of candidates){
+      if(count<=0) break;
+      const cell=grid[item.r][item.c];
+      const next=grid[item.r+item.d.dr][item.c+item.d.dc];
+      if(s.mode==="braided"){
+        const degree=cell.walls.filter(w=>!w).length;
+        const degree2=next.walls.filter(w=>!w).length;
+        if(degree===1 || degree2===1){
+          carve(cell,next,item.d); count--;
+        }
+      } else {
+        carve(cell,next,item.d); count--;
+      }
+    }
+  }
+
+  function boundaryCells(side,s){
+    const list=[];
+    if(side==="left"||side==="right") for(let r=0;r<s.rows;r++) list.push({r,c:side==="left"?0:s.cols-1,side});
+    else for(let c=0;c<s.cols;c++) list.push({r:side==="top"?0:s.rows-1,c,side});
+    return list;
+  }
+
+  function resolveSide(side){
+    return side==="random" ? ["left","right","top","bottom"][randInt(4)] : side;
+  }
+
+  function bfsDistances(source,s){
+    const dist=Array.from({length:s.rows},()=>Array(s.cols).fill(-1));
+    const q=[source];
+    dist[source.r][source.c]=0;
+    for(let qi=0;qi<q.length;qi++){
+      const cur=q[qi];
+      const cell=maze[cur.r][cur.c];
+      for(const d of dirs){
+        if(cell.walls[d.wall]) continue;
+        const nr=cur.r+d.dr,nc=cur.c+d.dc;
+        if(valid(nr,nc,s)&&dist[nr][nc]===-1){
+          dist[nr][nc]=dist[cur.r][cur.c]+1;
+          q.push({r:nr,c:nc});
+        }
+      }
+    }
+    return dist;
+  }
+
+  function chooseEndpoints(s){
+    const entranceSide=resolveSide(s.entranceSide);
+    const exitSide=resolveSide(s.exitSide);
+    const entrances=boundaryCells(entranceSide,s);
+    start=entrances[randInt(entrances.length)];
+    const exits=boundaryCells(exitSide,s);
+
+    if(s.maximizeDistance){
+      const dist=bfsDistances(start,s);
+      exit=exits.reduce((best,p)=>dist[p.r][p.c]>dist[best.r][best.c]?p:best,exits[0]);
+    }else{
+      exit=exits[randInt(exits.length)];
+    }
+
+    maze[start.r][start.c].walls[sideWall(start.side)]=false;
+    maze[exit.r][exit.c].walls[sideWall(exit.side)]=false;
+  }
+
+  function sideWall(side){ return {top:0,right:1,bottom:2,left:3}[side]; }
+
+  function solveMaze(s){
+    const prev=Array.from({length:s.rows},()=>Array(s.cols).fill(null));
+    const q=[{r:start.r,c:start.c}];
+    prev[start.r][start.c]={r:-1,c:-1};
+    for(let qi=0;qi<q.length;qi++){
+      const cur=q[qi];
+      if(cur.r===exit.r&&cur.c===exit.c) break;
+      const cell=maze[cur.r][cur.c];
+      for(const d of dirs){
+        if(cell.walls[d.wall]) continue;
+        const nr=cur.r+d.dr,nc=cur.c+d.dc;
+        if(valid(nr,nc,s)&&prev[nr][nc]===null){
+          prev[nr][nc]=cur;
+          q.push({r:nr,c:nc});
+        }
+      }
+    }
+    const path=[];
+    let cur={r:exit.r,c:exit.c};
+    if(prev[cur.r][cur.c]===null) return [];
+    while(cur.r!==-1){
+      path.push(cur);
+      cur=prev[cur.r][cur.c];
+    }
+    return path.reverse();
+  }
+
+  function generate() {
+    const s=settings();
+    rng=mulberry32(hashSeed(s.seed));
+    maze=s.algorithm==="prim" ? generatePrim(s) : s.algorithm==="kruskal" ? generateKruskal(s) : generateDFS(s);
+    addLoops(maze,s);
+    chooseEndpoints(s);
+    solution=solveMaze(s);
+    player={r:start.r,c:start.c};
+    collisions=0;
+    hintIndex=-1;
+    draw();
+    updateStats();
+  }
+
+  function draw(customCtx=ctx, exportScale=1, worksheet=false){
+    const s=settings();
+    const pad=worksheet?90:20;
+    const footer=worksheet?28:20;
+    const w=s.cols*s.cellSize+40;
+    const h=s.rows*s.cellSize+pad+footer;
+    canvas.width=w;
+    canvas.height=h;
+
+    ctx.fillStyle=s.bgColor;
+    ctx.fillRect(0,0,w,h);
+
+    if(worksheet){
+      ctx.fillStyle=s.wallColor;
+      ctx.font="700 24px system-ui";
+      ctx.fillText($("title").value || "Maze",20,30);
+      ctx.font="14px system-ui";
+      ctx.fillStyle="#5c6870";
+      ctx.fillText($("instructions").value || "",20,55);
+      const meta=[ $("participant").value ? "Name: "+$("participant").value : "", $("mazeId").value ? "Maze: "+$("mazeId").value : "" ].filter(Boolean).join("   ");
+      ctx.fillText(meta,20,78);
+    }
+
+    const ox=20, oy=worksheet?90:20;
+
+    if(s.showGrid){
+      ctx.strokeStyle="rgba(120,130,135,.22)";
+      ctx.lineWidth=1;
+      for(let r=0;r<=s.rows;r++){ctx.beginPath();ctx.moveTo(ox,oy+r*s.cellSize);ctx.lineTo(ox+s.cols*s.cellSize,oy+r*s.cellSize);ctx.stroke();}
+      for(let c=0;c<=s.cols;c++){ctx.beginPath();ctx.moveTo(ox+c*s.cellSize,oy);ctx.lineTo(ox+c*s.cellSize,oy+s.rows*s.cellSize);ctx.stroke();}
+    }
+
+    ctx.strokeStyle=s.wallColor;
+    ctx.lineWidth=s.wallWidth;
+    ctx.lineCap="square";
+
+    for(let r=0;r<s.rows;r++)for(let c=0;c<s.cols;c++){
+      const x=ox+c*s.cellSize, y=oy+r*s.cellSize;
+      const cell=maze[r]?.[c];
+      if(!cell) continue;
+      if(cell.walls[0]) line(x,y,x+s.cellSize,y);
+      if(cell.walls[1]) line(x+s.cellSize,y,x+s.cellSize,y+s.cellSize);
+      if(cell.walls[2]) line(x,y+s.cellSize,x+s.cellSize,y+s.cellSize);
+      if(cell.walls[3]) line(x,y,x,y+s.cellSize);
+    }
+
+    fillCell(start,s.startColor,ox,oy,s.cellSize,.62);
+    fillCell(exit,s.exitColor,ox,oy,s.cellSize,.62);
+
+    if(s.showSolution && solution.length){
+      ctx.strokeStyle=s.solutionColor;
+      ctx.lineWidth=s.solutionWidth;
+      ctx.lineCap="round";
+      ctx.lineJoin="round";
+      ctx.beginPath();
+      solution.forEach((p,i)=>{
+        const x=ox+p.c*s.cellSize+s.cellSize/2;
+        const y=oy+p.r*s.cellSize+s.cellSize/2;
+        i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+      });
+      ctx.stroke();
+    }
+
+    if(hintIndex>=0 && solution[hintIndex]){
+      fillCell(solution[hintIndex],"rgba(255,184,61,.75)",ox,oy,s.cellSize,.55);
+    }
+
+    if($("interactive").checked && player){
+      const x=ox+player.c*s.cellSize+s.cellSize/2;
+      const y=oy+player.r*s.cellSize+s.cellSize/2;
+      ctx.beginPath();
+      ctx.fillStyle="#6f42c1";
+      ctx.arc(x,y,Math.max(3,s.cellSize*.22),0,Math.PI*2);
+      ctx.fill();
+    }
+
+    if(s.showLabels){
+      ctx.font=`700 ${Math.max(9,Math.floor(s.cellSize*.38))}px system-ui`;
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.fillStyle="#083b27";
+      ctx.fillText("S",ox+start.c*s.cellSize+s.cellSize/2,oy+start.r*s.cellSize+s.cellSize/2);
+      ctx.fillStyle="#571818";
+      ctx.fillText("E",ox+exit.c*s.cellSize+s.cellSize/2,oy+exit.r*s.cellSize+s.cellSize/2);
+    }
+
+    function line(x1,y1,x2,y2){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+  }
+
+  function fillCell(p,color,ox,oy,size,scale){
+    const margin=size*(1-scale)/2;
+    ctx.fillStyle=color;
+    ctx.fillRect(ox+p.c*size+margin,oy+p.r*size+margin,size-2*margin,size-2*margin);
+  }
+
+  function updateStats(){
+    const s=settings();
+    let dead=0,junctions=0;
+    for(const row of maze)for(const cell of row){
+      const degree=cell.walls.filter(w=>!w).length;
+      if(degree===1)dead++;
+      if(degree>=3)junctions++;
+    }
+    let turns=0;
+    for(let i=2;i<solution.length;i++){
+      const a=solution[i-2],b=solution[i-1],c=solution[i];
+      if((b.r-a.r)!==(c.r-b.r)||(b.c-a.c)!==(c.c-b.c))turns++;
+    }
+    const complexity=(solution.length/(s.rows*s.cols))*40 + turns*1.4 + dead*.35 + junctions*.45;
+    const difficulty=complexity<25?"Easy":complexity<55?"Medium":complexity<95?"Hard":"Expert";
+    $("difficultyBadge").textContent="Difficulty: "+difficulty;
+    $("statCells").textContent=s.rows*s.cols;
+    $("statPath").textContent=Math.max(0,solution.length-1);
+    $("statTurns").textContent=turns;
+    $("statDeadEnds").textContent=dead;
+    $("statJunctions").textContent=junctions;
+    $("statCollisions").textContent=collisions;
+  }
+
+  function movePlayer(dr,dc){
+    if(!$("interactive").checked||!player)return;
+    const s=settings();
+    const d=dirs.find(x=>x.dr===dr&&x.dc===dc);
+    if(!d)return;
+    const cell=maze[player.r][player.c];
+    if(cell.walls[d.wall]){
+      if($("collision").checked)collisions++;
+    }else{
+      const nr=player.r+dr,nc=player.c+dc;
+      if(valid(nr,nc,s)){player={r:nr,c:nc};}
+    }
+    if(player.r===exit.r&&player.c===exit.c){
+      setTimeout(()=>alert(`Maze completed with ${collisions} collision(s).`),50);
+    }
+    draw();updateStats();
+  }
+
+  function pointerCell(e){
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
+    const x=(e.clientX-rect.left)*scaleX;
+    const y=(e.clientY-rect.top)*scaleY;
+    const s=settings();
+    const oy=20;
+    return {c:Math.floor((x-20)/s.cellSize),r:Math.floor((y-oy)/s.cellSize)};
+  }
+
+  function tryMoveTo(target){
+    if(!player||!$("interactive").checked)return;
+    const dr=target.r-player.r, dc=target.c-player.c;
+    if(Math.abs(dr)+Math.abs(dc)===1)movePlayer(dr,dc);
+  }
+
+  function exportPNG(){
+    draw(ctx,1,$("includeWorksheet").checked);
+    const link=document.createElement("a");
+    link.download=`maze_${$("mazeId").value||"export"}_${$("seed").value}.png`;
+    link.href=canvas.toDataURL("image/png");
+    link.click();
+    draw();
+  }
+
+  async function exportPDF(){
+    draw(ctx,1,$("includeWorksheet").checked);
+    if(!window.jspdf){
+      alert("PDF library could not load. Use Print and choose Save as PDF.");
+      return;
+    }
+    const {jsPDF}=window.jspdf;
+    const orientation=canvas.width>canvas.height?"landscape":"portrait";
+    const pdf=new jsPDF({orientation,unit:"pt",format:"a4"});
+    const pageW=pdf.internal.pageSize.getWidth(), pageH=pdf.internal.pageSize.getHeight();
+    const margin=30;
+    const ratio=Math.min((pageW-2*margin)/canvas.width,(pageH-2*margin)/canvas.height);
+    const w=canvas.width*ratio,h=canvas.height*ratio;
+    pdf.addImage(canvas.toDataURL("image/png"),"PNG",(pageW-w)/2,(pageH-h)/2,w,h);
+    pdf.save(`maze_${$("mazeId").value||"export"}_${$("seed").value}.pdf`);
+    draw();
+  }
+
+  function saveJSON(){
+    const data={version:1, settings:Object.fromEntries(
+      [...document.querySelectorAll("input,select,textarea")]
+      .filter(el=>el.id&&el.type!=="file")
+      .map(el=>[el.id,el.type==="checkbox"?el.checked:el.value])
+    ), maze:maze.map(row=>row.map(c=>({walls:c.walls}))), start, exit};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=`maze_project_${$("mazeId").value||"project"}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function loadJSON(file){
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        for(const [id,value] of Object.entries(data.settings||{})){
+          const el=$(id);
+          if(!el)continue;
+          if(el.type==="checkbox")el.checked=!!value;else el.value=value;
+        }
+        const s=settings();
+        maze=createGrid(s.rows,s.cols);
+        data.maze.forEach((row,r)=>row.forEach((cell,c)=>{maze[r][c].walls=cell.walls;}));
+        start=data.start;exit=data.exit;
+        solution=solveMaze(s);
+        player={r:start.r,c:start.c};
+        collisions=0;
+        draw();updateStats();
+      }catch(err){alert("Invalid maze project file.");}
+    };
+    reader.readAsText(file);
+  }
+
+  const presetMap={
+    small:{rows:12,cols:18,cellSize:28,loops:10,algorithm:"dfs"},
+    medium:{rows:25,cols:35,cellSize:20,loops:25,algorithm:"dfs"},
+    large:{rows:45,cols:60,cellSize:12,loops:18,algorithm:"prim"},
+    kids:{rows:10,cols:14,cellSize:34,loops:5,algorithm:"dfs"},
+    expert:{rows:50,cols:70,cellSize:10,loops:35,algorithm:"kruskal"}
+  };
+
+  $("preset").addEventListener("change",e=>{
+    const p=presetMap[e.target.value]; if(!p)return;
+    Object.entries(p).forEach(([k,v])=>$(k).value=v);
+    $("loopsValue").textContent=$("loops").value;
+    generate();
+  });
+
+  $("generate").onclick=generate;
+  $("regenerate").onclick=generate;
+  $("newSeed").onclick=()=>{randomizeSeed();generate();};
+  $("randomSeed").onclick=randomizeSeed;
+  $("toggleSolution").onclick=()=>{$("showSolution").checked=!$("showSolution").checked;draw();};
+  $("showSolution").onchange=draw;
+  $("showGrid").onchange=draw;
+  $("showLabels").onchange=draw;
+  $("darkMode").onchange=e=>document.body.classList.toggle("dark",e.target.checked);
+  $("exportPng").onclick=exportPNG;
+  $("exportPdf").onclick=exportPDF;
+  $("printButton").onclick=()=>{draw(ctx,1,$("includeWorksheet").checked);window.print();draw();};
+  $("saveProject").onclick=saveJSON;
+  $("loadProjectButton").onclick=()=>$("loadProject").click();
+  $("loadProject").onchange=e=>e.target.files[0]&&loadJSON(e.target.files[0]);
+  $("copySeed").onclick=()=>navigator.clipboard?.writeText($("seed").value);
+  $("resetRun").onclick=()=>{player={r:start.r,c:start.c};collisions=0;draw();updateStats();};
+  $("hintButton").onclick=()=>{hintIndex=Math.min(solution.length-1,hintIndex+1);draw();};
+
+  function randomizeSeed(){
+    $("seed").value="maze-"+Math.random().toString(36).slice(2,10);
+  }
+
+  ["bias","loops"].forEach(id=>{
+    $(id).addEventListener("input",()=>$(id+"Value").textContent=$(id).value);
+  });
+
+  document.querySelectorAll("#cellSize,#wallWidth,#bgColor,#wallColor,#startColor,#exitColor,#solutionColor,#solutionWidth,#includeWorksheet")
+    .forEach(el=>el.addEventListener("input",()=>maze.length&&draw()));
+
+  canvas.addEventListener("pointerdown",e=>{dragging=true;canvas.setPointerCapture(e.pointerId);tryMoveTo(pointerCell(e));});
+  canvas.addEventListener("pointermove",e=>{if(dragging)tryMoveTo(pointerCell(e));});
+  canvas.addEventListener("pointerup",()=>dragging=false);
+
+  window.addEventListener("keydown",e=>{
+    const map={ArrowUp:[-1,0],ArrowRight:[0,1],ArrowDown:[1,0],ArrowLeft:[0,-1]};
+    if(map[e.key]){e.preventDefault();movePlayer(...map[e.key]);}
+  });
+
+  generate();
+})();
+</script>
+</body>
+</html>

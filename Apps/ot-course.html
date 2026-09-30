@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OT Conceptual Models — Interactive Course | 作业治疗概念模式互动课程</title>
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#2B6CB0;--primary-light:#E3F2FD;--primary-dark:#1A4A7A;
+  --accent:#38B2AC;--accent-light:#E6FFFA;
+  --bg:#F7FAFC;--card:#FFFFFF;--text:#2D3748;--text-light:#718096;
+  --success:#48BB78;--danger:#F56565;--warning:#ECC94B;
+  --shadow:0 4px 24px rgba(0,0,0,.08);--radius:12px;
+  --font-sans:'Segoe UI','PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif;
+  --max-w:1100px;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+a{color:var(--primary);text-decoration:none}
+img{max-width:100%}
+
+/* ===== LANGUAGE TOGGLE ===== */
+.lang-toggle{position:fixed;top:16px;right:16px;z-index:1000;background:var(--primary);color:#fff;border:none;padding:8px 20px;border-radius:24px;font-size:.85rem;font-weight:600;cursor:pointer;box-shadow:0 2px 12px rgba(43,108,176,.35);transition:transform .2s,box-shadow .2s}
+.lang-toggle:hover{transform:scale(1.05);box-shadow:0 4px 18px rgba(43,108,176,.45)}
+
+/* ===== NAVBAR ===== */
+.navbar{position:sticky;top:0;z-index:900;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid #E2E8F0;padding:0}
+.nav-inner{max-width:var(--max-w);margin:0 auto;display:flex;align-items:center;overflow-x:auto;scrollbar-width:none}
+.nav-inner::-webkit-scrollbar{display:none}
+.nav-link{display:block;padding:14px 18px;font-size:.82rem;font-weight:600;color:var(--text-light);white-space:nowrap;border-bottom:3px solid transparent;transition:color .2s,border-color .2s;cursor:pointer}
+.nav-link:hover,.nav-link.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+/* ===== HERO ===== */
+.hero{background:linear-gradient(135deg,var(--primary) 0%,var(--accent) 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+.hero h1{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:800;margin-bottom:12px;letter-spacing:-.02em}
+.hero p{font-size:clamp(1rem,2.5vw,1.2rem);max-width:700px;margin:0 auto;opacity:.92}
+.hero .badge{display:inline-block;background:rgba(255,255,255,.2);padding:6px 18px;border-radius:20px;font-size:.8rem;margin-top:18px;backdrop-filter:blur(4px)}
+
+/* ===== SECTIONS ===== */
+.section{max-width:var(--max-w);margin:0 auto;padding:48px 24px}
+.section-title{font-size:1.6rem;font-weight:700;color:var(--primary-dark);margin-bottom:8px;position:relative}
+.section-title::after{content:'';display:block;width:48px;height:4px;background:var(--accent);border-radius:2px;margin-top:8px}
+.section-subtitle{color:var(--text-light);font-size:1rem;margin-bottom:32px}
+
+/* ===== CARDS ===== */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;margin-bottom:24px;border:1px solid #EDF2F7;transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.1)}
+.card h3{font-size:1.2rem;color:var(--primary-dark);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+/* ===== OBJECTIVES ===== */
+.obj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.obj-card{background:var(--card);border-radius:var(--radius);padding:24px;border-left:4px solid var(--accent);box-shadow:var(--shadow)}
+.obj-card .icon{font-size:1.8rem;margin-bottom:8px}
+.obj-card h4{font-size:1rem;color:var(--primary-dark);margin-bottom:6px}
+.obj-card p{font-size:.9rem;color:var(--text-light)}
+
+/* ===== MODEL DIAGRAM ===== */
+.diagram-container{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin:24px 0;overflow-x:auto}
+.diagram-svg{display:block;margin:0 auto;max-width:100%}
+
+/* ===== QUIZ ===== */
+.quiz-box{background:linear-gradient(135deg,#EBF8FF 0%,#E6FFFA 100%);border-radius:var(--radius);padding:24px;margin:20px 0;border:2px solid var(--primary-light)}
+.quiz-box h4{color:var(--primary-dark);margin-bottom:12px;font-size:1.05rem}
+.quiz-options{display:flex;flex-direction:column;gap:10px}
+.quiz-opt{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:8px;border:2px solid #E2E8F0;cursor:pointer;transition:all .2s;font-size:.92rem;background:#fff}
+.quiz-opt:hover{border-color:var(--primary);background:var(--primary-light)}
+.quiz-opt.selected{border-color:var(--primary);background:var(--primary-light)}
+.quiz-opt.correct{border-color:var(--success);background:#F0FFF4;color:var(--success)}
+.quiz-opt.incorrect{border-color:var(--danger);background:#FFF5F5;color:var(--danger)}
+.quiz-opt .marker{font-weight:700;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#EDF2F7;font-size:.75rem;flex-shrink:0}
+.quiz-feedback{margin-top:12px;padding:12px 16px;border-radius:8px;font-size:.9rem;display:none}
+.quiz-feedback.show{display:block}
+.quiz-feedback.correct{background:#F0FFF4;color:#22543D;border:1px solid #C6F6D5}
+.quiz-feedback.incorrect{background:#FFF5F5;color:#742A2A;border:1px solid #FED7D7}
+.quiz-btn{margin-top:12px;padding:8px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;transition:background .2s}
+.quiz-btn:hover{background:var(--primary-dark)}
+.quiz-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ===== FINAL QUIZ ===== */
+.final-quiz{background:linear-gradient(135deg,#2B6CB0 0%,#38B2AC 100%);border-radius:var(--radius);padding:36px;color:#fff;margin:24px 0}
+.final-quiz h3{margin-bottom:8px;font-size:1.3rem}
+.final-quiz .quiz-question{background:rgba(255,255,255,.12);border-radius:8px;padding:18px;margin-bottom:16px}
+.final-quiz .quiz-question p{font-size:1rem;margin-bottom:10px}
+.final-quiz .quiz-opt{background:rgba(255,255,255,.9);border:2px solid rgba(255,255,255,.3)}
+.final-quiz .quiz-opt:hover{border-color:rgba(255,255,255,.7)}
+.final-quiz .quiz-opt.correct{background:#C6F6D5;color:#22543D;border-color:#48BB78}
+.final-quiz .quiz-opt.incorrect{background:#FED7D7;color:#742A2A;border-color:#F56565}
+.final-quiz .quiz-feedback{background:rgba(255,255,255,.95)}
+.final-quiz .quiz-feedback.correct{color:#22543D;border-color:#C6F6D5}
+.final-quiz .quiz-feedback.incorrect{color:#742A2A;border-color:#FED7D7}
+.final-quiz .quiz-btn{background:#fff;color:var(--primary)}
+.final-quiz .quiz-btn:hover{background:#E2E8F0}
+.score-bar{text-align:center;padding:20px;font-size:1.2rem;font-weight:700;display:none}
+.score-bar.show{display:block}
+
+/* ===== MODULE HEADER ===== */
+.module-header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.module-number{width:48px;height:48px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;flex-shrink:0}
+.module-header-text h2{font-size:1.4rem;color:var(--primary-dark);margin:0}
+.module-header-text p{font-size:.85rem;color:var(--text-light);margin:0}
+
+/* ===== KEY CONCEPTS ===== */
+.concept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:16px 0}
+.concept-item{background:var(--primary-light);border-radius:8px;padding:16px;text-align:center;border:1px solid #BEE3F8}
+.concept-item .concept-icon{font-size:1.6rem;margin-bottom:6px}
+.concept-item h5{font-size:.9rem;color:var(--primary-dark);margin-bottom:4px}
+.concept-item p{font-size:.8rem;color:var(--text-light)}
+
+/* ===== CASE STUDY ===== */
+.case-study{background:#FFFDF5;border-left:4px solid var(--warning);border-radius:var(--radius);padding:24px;margin:20px 0}
+.case-study h4{color:#744210;margin-bottom:8px}
+.case-study p{font-size:.92rem;color:#744210}
+
+/* ===== TABLE OF CONTENTS ===== */
+.toc{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:32px}
+.toc h3{font-size:1.1rem;color:var(--primary-dark);margin-bottom:12px}
+.toc ol{padding-left:24px}
+.toc li{margin-bottom:6px}
+.toc a{font-size:.92rem;color:var(--primary)}
+.toc a:hover{text-decoration:underline}
+
+/* ===== FOOTER ===== */
+.footer{background:var(--primary-dark);color:rgba(255,255,255,.8);text-align:center;padding:24px;font-size:.85rem;margin-top:48px}
+
+/* ===== DIVIDER ===== */
+.divider{height:2px;background:linear-gradient(90deg,transparent,var(--primary-light),var(--accent),var(--primary-light),transparent);margin:48px 0}
+
+/* ===== HIDE/SHOW ===== */
+[data-lang="zh"]{display:none}
+body.zh [data-lang="en"]{display:none}
+body.zh [data-lang="zh"]{display:block}
+body.zh .lang-toggle{background:var(--accent)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .hero{padding:56px 16px 40px}
+  .section{padding:32px 16px}
+  .card{padding:20px}
+  .concept-grid{grid-template-columns:1fr 1fr}
+  .nav-link{padding:12px 14px;font-size:.76rem}
+  .final-quiz{padding:24px}
+}
+@media(max-width:480px){
+  .concept-grid{grid-template-columns:1fr}
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fadeInUp .5s ease forwards}
+.delay-1{animation-delay:.1s;opacity:0}
+.delay-2{animation-delay:.2s;opacity:0}
+.delay-3{animation-delay:.3s;opacity:0}
+
+/* ===== PROGRESS BAR ===== */
+.progress-container{position:fixed;top:0;left:0;width:100%;height:4px;z-index:1100;background:transparent}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));width:0;transition:width .15s}
+</style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+
+<!-- LANGUAGE TOGGLE -->
+<button class="lang-toggle" id="langToggle" onclick="toggleLang()">中文 Chinese</button>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a class="nav-link" href="#intro" data-en="Introduction" data-zh="课程简介">Introduction</a>
+    <a class="nav-link" href="#moho" data-en="MOHO" data-zh="MOHO">MOHO</a>
+    <a class="nav-link" href="#peop" data-en="PEOP" data-zh="PEOP">PEOP</a>
+    <a class="nav-link" href="#cmope" data-en="CMOP-E" data-zh="CMOP-E">CMOP-E</a>
+    <a class="nav-link" href="#kawa" data-en="Kawa" data-zh="河川模型">Kawa</a>
+    <a class="nav-link" href="#final" data-en="Final Quiz" data-zh="综合测试">Final Quiz</a>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div data-lang="en">
+    <h1>Conceptual Models of Occupational Therapy</h1>
+    <p>An interactive course exploring the foundational frameworks that guide OT practice worldwide — from theory to clinical application.</p>
+    <span class="badge">Interactive · Multilingual · Self-paced</span>
+  </div>
+  <div data-lang="zh">
+    <h1>作业治疗概念模式</h1>
+    <p>一门互动式课程，探索指导全球作业治疗实践的基础理论框架——从理论到临床应用的完整学习路径。</p>
+    <span class="badge">互动式 · 双语 · 自主学习</span>
+  </div>
+</header>
+
+<!-- ===== INTRODUCTION ===== -->
+<section class="section" id="intro">
+  <h2 class="section-title" data-lang="en">Course Introduction</h2>
+  <h2 class="section-title" data-lang="zh">课程简介</h2>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3 data-lang="en">Table of Contents</h3>
+    <h3 data-lang="zh">目录</h3>
+    <ol>
+      <li><a href="#moho" data-lang="en">Module 1: Model of Human Occupation (MOHO)</a><a href="#moho" data-lang="zh">模块一：人类作业模式（MOHO）</a></li>
+      <li><a href="#peop" data-lang="en">Module 2: Person-Environment-Occupation-Performance (PEOP)</a><a href="#peop" data-lang="zh">模块二：人-环境-作业-表现模式（PEOP）</a></li>
+      <li><a href="#cmope" data-lang="en">Module 3: Canadian Model of Occupational Performance and Engagement (CMOP-E)</a><a href="#cmope" data-lang="zh">模块三：加拿大作业表现与参与模式（CMOP-E）</a></li>
+      <li><a href="#kawa" data-lang="en">Module 4: Kawa Model (River Model)</a><a href="#kawa" data-lang="zh">模块四：河川模型（Kawa Model）</a></li>
+      <li><a href="#final" data-lang="en">Module 5: Final Comprehensive Assessment</a><a href="#kawa" data-lang="zh">模块五：综合评估测试</a></li>
+    </ol>
+  </div>
+
+  <div data-lang="en">
+    <p class="section-subtitle">Welcome to this comprehensive course on the major conceptual models used in Occupational Therapy practice. This course is designed for OT students, educators, and practitioners who wish to deepen their understanding of the theoretical frameworks that underpin clinical reasoning and intervention planning.</p>
+  </div>
+  <div data-lang="zh">
+    <p class="section-subtitle">欢迎来到这门关于作业治疗主要概念模式的综合课程。本课程面向作业治疗学生、教育工作者和从业者，旨在帮助他们深入理解支撑临床推理和干预计划的理论框架。</p>
+  </div>
+
+  <h3 data-lang="en" style="margin-bottom:16px;font-size:1.1rem;color:var(--primary-dark)">Learning Objectives</h3>
+  <h3 data-lang="zh" style="margin-bottom:16px;font-size:1.1rem;color:var(--primary-dark)">学习目标</h3>
+
+  <div class="obj-grid">
+    <div class="obj-card">
+      <div class="icon">📖</div>
+      <h4 data-lang="en">Understand Core Frameworks</h4>
+      <h4 data-lang="zh">理解核心框架</h4>
+      <p data-lang="en">Master the key concepts and structures of four major OT conceptual models.</p>
+      <p data-lang="zh">掌握四大作业治疗概念模式的核心概念与结构。</p>
+    </div>
+    <div class="obj-card">
+      <div class="icon">🔍</div>
+      <h4 data-lang="en">Compare & Contrast</h4>
+      <h4 data-lang="zh">比较与对比</h4>
+      <p data-lang="en">Identify the similarities, differences, and unique contributions of each model.</p>
+      <p data-lang="zh">识别各模式之间的相似之处、差异及其独特贡献。</p>
+    </div>
+    <div class="obj-card">
+      <div class="icon">🏥</div>
+      <h4 data-lang="en">Apply to Practice</h4>
+      <h4 data-lang="zh">应用于实践</h4>
+      <p data-lang="en">Learn how to use these models in real-world clinical assessment and intervention.</p>
+      <p data-lang="zh">学习如何在真实临床评估和干预中运用这些模式。</p>
+    </div>
+    <div class="obj-card">
+      <div class="icon">✅</div>
+      <h4 data-lang="en">Self-Assess Knowledge</h4>
+      <h4 data-lang="zh">自我评估知识</h4>
+      <p data-lang="en">Test your understanding through embedded quizzes and a final comprehensive assessment.</p>
+      <p data-lang="zh">通过嵌入式测验和综合评估测试您的理解程度。</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== MODULE 1: MOHO ===== -->
+<section class="section" id="moho">
+  <div class="module-header">
+    <div class="module-number">1</div>
+    <div class="module-header-text">
+      <h2 data-lang="en">Model of Human Occupation (MOHO)</h2>
+      <h2 data-lang="zh">人类作业模式（MOHO）</h2>
+      <p data-lang="en">Developed by Gary Kielhofner, 1980</p>
+      <p data-lang="zh">由Gary Kielhofner于1980年发展</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 data-lang="en">📋 Overview</h3>
+    <h3 data-lang="zh">📋 概述</h3>
+    <div data-lang="en">
+      <p>The <strong>Model of Human Occupation (MOHO)</strong> is one of the most widely researched and applied conceptual models in occupational therapy. It views humans as open systems that interact with their environment through occupation. MOHO is organized around three core subsystems and one additional component:</p>
+    </div>
+    <div data-lang="zh">
+      <p><strong>人类作业模式（MOHO）</strong>是作业治疗领域研究最广泛、应用最多的概念模式之一。它将人类视为通过作业与环境互动的开放系统。MOHO围绕三个核心子系统和一个附加组件组织：</p>
+    </div>
+  </div>
+
+  <!-- KEY CONCEPTS -->
+  <div class="concept-grid">
+    <div class="concept-item">
+      <div class="concept-icon">🧠</div>
+      <h5 data-lang="en">Volition</h5>
+      <h5 data-lang="zh">意志</h5>
+      <p data-lang="en">Motivation for occupation — personal causation, values, interests</p>
+      <p data-lang="zh">作业的动机——个人效能感、价值观、兴趣</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">⚙️</div>
+      <h5 data-lang="en">Habituation</h5>
+      <h5 data-lang="zh">习惯化</h5>
+      <p data-lang="en">Routines and roles that organize behavior into patterns</p>
+      <p data-lang="zh">将行为组织成模式的日常习惯和角色</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">💪</div>
+      <h5 data-lang="en">Performance Capacity</h5>
+      <h5 data-lang="zh">表现能力</h5>
+      <p data-lang="en">Physical and mental abilities that underlie skilled performance</p>
+      <p data-lang="zh">支撑技能表现的体力和心智能力</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🌍</div>
+      <h5 data-lang="en">Environment</h5>
+      <h5 data-lang="zh">环境</h5>
+      <p data-lang="en">External contexts — objects, spaces, social groups, culture</p>
+      <p data-lang="zh">外部情境——物品、空间、社会群体、文化</p>
+    </div>
+  </div>
+
+  <!-- SVG DIAGRAM -->
+  <div class="diagram-container">
+    <div data-lang="en" style="text-align:center;margin-bottom:12px;font-weight:600;color:var(--primary-dark)">MOHO Conceptual Structure</div>
+    <div data-lang="zh" style="text-align:center;margin-bottom:12px;font-weight:600;color:var(--primary-dark)">MOHO概念结构</div>
+    <svg class="diagram-svg" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" width="720" height="420">
+      <!-- Outer box: Occupation -->
+      <rect x="10" y="10" width="700" height="400" rx="16" fill="#EBF8FF" stroke="#2B6CB0" stroke-width="2"/>
+      <text x="360" y="34" text-anchor="middle" font-size="14" font-weight="700" fill="#1A4A7A">
+        <tspan data-lang="en">Occupation (Output)</tspan>
+        <tspan data-lang="zh" display="none">作业（输出）</tspan>
+      </text>
+
+      <!-- Volition -->
+      <rect x="50" y="60" width="190" height="120" rx="12" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="2"/>
+      <text x="145" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#1A4A7A">
+        <tspan data-lang="en">Volition</tspan>
+        <tspan data-lang="zh" display="none">意志</tspan>
+      </text>
+      <text x="145" y="112" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Personal Causation</tspan>
+        <tspan data-lang="zh" display="none">个人效能感</tspan>
+      </text>
+      <text x="145" y="128" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Values</tspan>
+        <tspan data-lang="zh" display="none">价值观</tspan>
+      </text>
+      <text x="145" y="144" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Interests</tspan>
+        <tspan data-lang="zh" display="none">兴趣</tspan>
+      </text>
+
+      <!-- Habituation -->
+      <rect x="265" y="60" width="190" height="120" rx="12" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="2"/>
+      <text x="360" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#1A4A7A">
+        <tspan data-lang="en">Habituation</tspan>
+        <tspan data-lang="zh" display="none">习惯化</tspan>
+      </text>
+      <text x="360" y="112" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Roles</tspan>
+        <tspan data-lang="zh" display="none">角色</tspan>
+      </text>
+      <text x="360" y="128" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Habits / Routines</tspan>
+        <tspan data-lang="zh" display="none">习惯/日常</tspan>
+      </text>
+
+      <!-- Performance Capacity -->
+      <rect x="480" y="60" width="190" height="120" rx="12" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="2"/>
+      <text x="575" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#1A4A7A">
+        <tspan data-lang="en">Performance Capacity</tspan>
+        <tspan data-lang="zh" display="none">表现能力</tspan>
+      </text>
+      <text x="575" y="112" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Physical / Mental</tspan>
+        <tspan data-lang="zh" display="none">身体/心理</tspan>
+      </text>
+      <text x="575" y="128" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Abilities</tspan>
+        <tspan data-lang="zh" display="none">能力</tspan>
+      </text>
+      <text x="575" y="144" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Subjective Experience</tspan>
+        <tspan data-lang="zh" display="none">主观体验</tspan>
+      </text>
+
+      <!-- Environment -->
+      <rect x="50" y="220" width="620" height="80" rx="12" fill="#E6FFFA" stroke="#38B2AC" stroke-width="2" stroke-dasharray="6,4"/>
+      <text x="360" y="250" text-anchor="middle" font-size="13" font-weight="700" fill="#234E52">
+        <tspan data-lang="en">Environment — Objects, Spaces, Social Groups, Culture</tspan>
+        <tspan data-lang="zh" display="none">环境——物品、空间、社会群体、文化</tspan>
+      </text>
+      <text x="360" y="272" text-anchor="middle" font-size="10" fill="#2D3748">
+        <tspan data-lang="en">Shapes and is shaped by the three subsystems</tspan>
+        <tspan data-lang="zh" display="none">塑造三个子系统，也被三个子系统所塑造</tspan>
+      </text>
+
+      <!-- Output: Occupational Participation -->
+      <rect x="150" y="330" width="420" height="56" rx="12" fill="#38B2AC" stroke="#2C7A7B" stroke-width="2"/>
+      <text x="360" y="354" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">
+        <tspan data-lang="en">Occupational Participation &amp; Performance (Output)</tspan>
+        <tspan data-lang="zh" display="none">作业参与和表现（输出）</tspan>
+      </text>
+      <text x="360" y="374" text-anchor="middle" font-size="10" fill="#E6FFFA">
+        <tspan data-lang="en">Skills, Patterns, Identity</tspan>
+        <tspan data-lang="zh" display="none">技能、模式、认同</tspan>
+      </text>
+
+      <!-- Arrows from subsystems to output -->
+      <line x1="145" y1="180" x2="260" y2="330" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="360" y1="180" x2="360" y2="330" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="575" y1="180" x2="460" y2="330" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <!-- Arrows between subsystems -->
+      <line x1="240" y1="120" x2="265" y2="120" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrowback)"/>
+      <line x1="455" y1="120" x2="480" y2="120" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrowback)"/>
+
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#2B6CB0"/>
+        </marker>
+        <marker id="arrowback" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+          <polygon points="10 0, 0 3.5, 10 7" fill="#2B6CB0"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <!-- CASE STUDY -->
+  <div class="case-study">
+    <h4 data-lang="en">📌 Clinical Case Study</h4>
+    <h4 data-lang="zh">📌 临床案例</h4>
+    <div data-lang="en">
+      <p><strong>Scenario:</strong> Mr. Chen, 65, retired teacher, recently experienced a mild stroke. He reports loss of interest in reading and socializing. Using MOHO, the OT assesses his <em>volition</em> (values and interests have shifted), <em>habituation</em> (daily routines disrupted), and <em>performance capacity</em> (mild right-hand weakness). The environment is modified to support return to meaningful activities. Intervention focuses on rebuilding volition through graded activities aligned with his values as an educator, gradually restoring routines.</p>
+    </div>
+    <div data-lang="zh">
+      <p><strong>情境：</strong>陈先生，65岁，退休教师，最近经历了轻微中风。他报告对阅读和社交失去了兴趣。使用MOHO，作业治疗师评估了他的<em>意志</em>（价值观和兴趣已发生改变）、<em>习惯化</em>（日常习惯被打乱）和<em>表现能力</em>（右手轻微无力）。环境被修改以支持他回归有意义的活动。干预重点是通过对齐他作为教育工作者的价值观的渐进活动重建意志，逐步恢复日常习惯。</p>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz-box" id="quiz-moho">
+    <h4 data-lang="en">📝 Quick Check — MOHO</h4>
+    <h4 data-lang="zh">📝 快速测试 — MOHO</h4>
+    <div data-lang="en">
+      <p>Which of the following is NOT one of the three core subsystems of MOHO?</p>
+    </div>
+    <div data-lang="zh">
+      <p>以下哪项不是MOHO的三个核心子系统之一？</p>
+    </div>
+    <div class="quiz-options">
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-moho')">
+        <span class="marker">A</span>
+        <span data-lang="en">Volition</span><span data-lang="zh">意志</span>
+      </div>
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-moho')">
+        <span class="marker">B</span>
+        <span data-lang="en">Environment</span><span data-lang="zh">环境</span>
+      </div>
+      <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'quiz-moho')">
+        <span class="marker">C</span>
+        <span data-lang="en">Self-care, Productivity, Leisure</span><span data-lang="zh">自我照顾、生产、休闲</span>
+      </div>
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-moho')">
+        <span class="marker">D</span>
+        <span data-lang="en">Habituation</span><span data-lang="zh">习惯化</span>
+      </div>
+    </div>
+    <button class="quiz-btn" onclick="checkQuiz('quiz-moho')" data-lang="en">Check Answer</button>
+    <button class="quiz-btn" onclick="checkQuiz('quiz-moho')" data-lang="zh">检查答案</button>
+    <div class="quiz-feedback" id="feedback-quiz-moho" data-lang="en">
+      ✅ <strong>Correct!</strong> Self-care, Productivity, and Leisure are occupational forms (from the Model of Human Occupation's output), not the three core subsystems. The three subsystems are Volition, Habituation, and Performance Capacity. Environment is an external factor, not a subsystem.
+    </div>
+    <div class="quiz-feedback" id="feedback-quiz-moho-zh" data-lang="zh">
+      ✅ <strong>正确！</strong>自我照顾、生产和休闲是作业形式（来自人类作业模式的输出），而不是三个核心子系统。三个子系统是意志、习惯化和表现能力。环境是外部因素，不是子系统。
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== MODULE 2: PEOP ===== -->
+<section class="section" id="peop">
+  <div class="module-header">
+    <div class="module-number">2</div>
+    <div class="module-header-text">
+      <h2 data-lang="en">Person-Environment-Occupation-Performance (PEOP)</h2>
+      <h2 data-lang="zh">人-环境-作业-表现模式（PEOP）</h2>
+      <p data-lang="en">Developed by Baum & Christiansen, 1995</p>
+      <p data-lang="zh">由Baum & Christiansen于1995年发展</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 data-lang="en">📋 Overview</h3>
+    <h3 data-lang="zh">📋 概述</h3>
+    <div data-lang="en">
+      <p>The <strong>PEOP model</strong> is a person-centered, client-centered approach that emphasizes the dynamic interaction between four components. It adopts a top-down approach, starting with what people want and need to do, then exploring the factors that influence their ability to perform occupations. The model integrates biological, psychological, and social perspectives.</p>
+    </div>
+    <div data-lang="zh">
+      <p><strong>PEOP模式</strong>是一种以人为中心、以客户为中心的方法，强调四个组成部分之间的动态互动。它采用自上而下的方法，从人们想要和需要做什么开始，然后探索影响其执行作业能力的因素。该模式整合了生物、心理和社会视角。</p>
+    </div>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-item">
+      <div class="concept-icon">🧬</div>
+      <h5 data-lang="en">Person</h5>
+      <h5 data-lang="zh">人</h5>
+      <p data-lang="en">Neurophysiological, cognitive, psychological, and spiritual factors</p>
+      <p data-lang="zh">神经生理、认知、心理和精神因素</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🏠</div>
+      <h5 data-lang="en">Environment</h5>
+      <h5 data-lang="zh">环境</h5>
+      <p data-lang="en">Cultural, institutional, social, physical, and natural factors</p>
+      <p data-lang="zh">文化、制度、社会、物理和自然因素</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🎯</div>
+      <h5 data-lang="en">Occupation</h5>
+      <h5 data-lang="zh">作业</h5>
+      <p data-lang="en">Activities of daily living, work, play, leisure, rest</p>
+      <p data-lang="zh">日常生活活动、工作、游戏、休闲、休息</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">⚡</div>
+      <h5 data-lang="en">Performance</h5>
+      <h5 data-lang="zh">表现</h5>
+      <p data-lang="en">The observable outcome of person-environment-occupation interaction</p>
+      <p data-lang="zh">人-环境-作业互动的可观察结果</p>
+    </div>
+  </div>
+
+  <!-- PEOP SVG DIAGRAM -->
+  <div class="diagram-container">
+    <div data-lang="en" style="text-align:center;margin-bottom:12px;font-weight:600;color:var(--primary-dark)">PEOP Model — Dynamic Interaction</div>
+    <div data-lang="zh" style="text-align:center;margin-bottom:12px;font-weight:600;color:var(--primary-dark)">PEOP模式——动态互动</div>
+    <svg class="diagram-svg" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" width="720" height="380">
+      <!-- Person -->
+      <circle cx="180" cy="140" r="90" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="3"/>
+      <text x="180" y="120" text-anchor="middle" font-size="14" font-weight="700" fill="#1A4A7A">
+        <tspan data-lang="en">Person</tspan>
+        <tspan data-lang="zh" display="none">人</tspan>
+      </text>
+      <text x="180" y="140" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">Neurophysiological</tspan>
+        <tspan data-lang="zh" display="none">神经生理</tspan>
+      </text>
+      <text x="180" y="154" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">Cognitive</tspan>
+        <tspan data-lang="zh" display="none">认知</tspan>
+      </text>
+      <text x="180" y="168" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">Psychological</tspan>
+        <tspan data-lang="zh" display="none">心理</tspan>
+      </text>
+      <text x="180" y="182" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">Spiritual</tspan>
+        <tspan data-lang="zh" display="none">精神</tspan>
+      </text>
+
+      <!-- Environment -->
+      <circle cx="420" cy="140" r="90" fill="#E6FFFA" stroke="#38B2AC" stroke-width="3"/>
+      <text x="420" y="120" text-anchor="middle" font-size="14" font-weight="700" fill="#234E52">
+        <tspan data-lang="en">Environment</tspan>
+        <tspan data-lang="zh" display="none">环境</tspan>
+      </text>
+      <text x="420" y="140" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">Cultural</tspan>
+        <tspan data-lang="zh" display="none">文化</tspan>
+      </text>
+      <text x="420" y="154" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">Institutional</tspan>
+        <tspan data-lang="zh" display="none">制度</tspan>
+      </text>
+      <text x="420" y="168" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">Social</tspan>
+        <tspan data-lang="zh" display="none">社会</tspan>
+      </text>
+      <text x="420" y="182" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">Physical / Natural</tspan>
+        <tspan data-lang="zh" display="none">物理/自然</tspan>
+      </text>
+
+      <!-- Overlap area -->
+      <path d="M300,140 A90,90 0 0,1 300,230" fill="#90CDF4" opacity="0.4" stroke="none"/>
+
+      <!-- Occupation -->
+      <rect x="230" y="260" width="260" height="60" rx="12" fill="#FEFCBF" stroke="#D69E2E" stroke-width="2"/>
+      <text x="360" y="284" text-anchor="middle" font-size="14" font-weight="700" fill="#744210">
+        <tspan data-lang="en">Occupation</tspan>
+        <tspan data-lang="zh" display="none">作业</tspan>
+      </text>
+      <text x="360" y="304" text-anchor="middle" font-size="9" fill="#2D3748">
+        <tspan data-lang="en">ADL · Work · Play · Leisure · Rest</tspan>
+        <tspan data-lang="zh" display="none">日常生活活动 · 工作 · 游戏 · 休闲 · 休息</tspan>
+      </text>
+
+      <!-- Performance -->
+      <rect x="200" y="340" width="320" height="30" rx="8" fill="#2B6CB0"/>
+      <text x="360" y="360" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">
+        <tspan data-lang="en">Performance (Occupational Performance Outcome)</tspan>
+        <tspan data-lang="zh" display="none">表现（作业表现结果）</tspan>
+      </text>
+
+      <!-- Arrows -->
+      <line x1="180" y1="230" x2="300" y2="260" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="420" y1="230" x2="420" y2="260" stroke="#38B2AC" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="360" y1="320" x2="360" y2="340" stroke="#D69E2E" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <!-- Bidirectional between Person and Environment -->
+      <path d="M270,100 Q300,60 330,100" stroke="#2B6CB0" stroke-width="2" fill="none" marker-end="url(#arrow)" marker-start="url(#arrowback)"/>
+      <text x="300" y="72" text-anchor="middle" font-size="9" fill="#2B6CB0" font-style="italic">
+        <tspan data-lang="en">Dynamic</tspan>
+        <tspan data-lang="zh" display="none">动态</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <!-- CASE STUDY -->
+  <div class="case-study">
+    <h4 data-lang="en">📌 Clinical Case Study</h4>
+    <h4 data-lang="zh">📌 临床案例</h4>
+    <div data-lang="en">
+      <p><strong>Scenario:</strong> Maria, 28, a software developer with rheumatoid arthritis, struggles to continue working from home. Using PEOP, the OT examines <em>person</em> factors (joint pain, fatigue, motivation), <em>environment</em> (home workspace ergonomics, employer policies, family support), and <em>occupation</em> (typical work tasks). The OT recommends ergonomic modifications, pacing strategies, and negotiating flexible work hours with the employer to optimize Maria's <em>occupational performance</em>.</p>
+    </div>
+    <div data-lang="zh">
+      <p><strong>情境：</strong>Maria，28岁，患有类风湿关节炎的软件开发者，难以继续在家工作。使用PEOP，作业治疗师检查了<em>人</em>的因素（关节疼痛、疲劳、动机）、<em>环境</em>（家庭工作空间的人体工学、雇主政策、家庭支持）和<em>作业</em>（典型工作任务）。作业治疗师建议人体工学改造、节奏策略，并与雇主协商弹性工作时间，以优化Maria的<em>作业表现</em>。</p>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz-box" id="quiz-peop">
+    <h4 data-lang="en">📝 Quick Check — PEOP</h4>
+    <h4 data-lang="zh">📝 快速测试 — PEOP</h4>
+    <div data-lang="en">
+      <p>The PEOP model is known for using which approach?</p>
+    </div>
+    <div data-lang="zh">
+      <p>PEOP模式以使用哪种方法而闻名？</p>
+    </div>
+    <div class="quiz-options">
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-peop')">
+        <span class="marker">A</span>
+        <span data-lang="en">Bottom-up approach</span><span data-lang="zh">自下而上的方法</span>
+      </div>
+      <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'quiz-peop')">
+        <span class="marker">B</span>
+        <span data-lang="en">Top-down approach</span><span data-lang="zh">自上而下的方法</span>
+      </div>
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-peop')">
+        <span class="marker">C</span>
+        <span data-lang="en">Purely biomedical approach</span><span data-lang="zh">纯生物医学方法</span>
+      </div>
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-peop')">
+        <span class="marker">D</span>
+        <span data-lang="en">Environmental determinism</span><span data-lang="zh">环境决定论</span>
+      </div>
+    </div>
+    <button class="quiz-btn" onclick="checkQuiz('quiz-peop')" data-lang="en">Check Answer</button>
+    <button class="quiz-btn" onclick="checkQuiz('quiz-peop')" data-lang="zh">检查答案</button>
+    <div class="quiz-feedback" id="feedback-quiz-peop" data-lang="en">
+      ✅ <strong>Correct!</strong> The PEOP model uses a top-down approach, starting with the client's desired occupations and then exploring the person, environment, and occupation factors that influence performance. This contrasts with bottom-up models that begin with underlying capacities.
+    </div>
+    <div class="quiz-feedback" id="feedback-quiz-peop-zh" data-lang="zh">
+      ✅ <strong>正确！</strong>PEOP模式使用自上而下的方法，从客户期望的作业开始，然后探索影响表现的个体、环境和作业因素。这与从基础能力开始的自下而上模式形成对比。
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== MODULE 3: CMOP-E ===== -->
+<section class="section" id="cmope">
+  <div class="module-header">
+    <div class="module-number">3</div>
+    <div class="module-header-text">
+      <h2 data-lang="en">Canadian Model of Occupational Performance &amp; Engagement (CMOP-E)</h2>
+      <h2 data-lang="zh">加拿大作业表现与参与模式（CMOP-E）</h2>
+      <p data-lang="en">Developed by the Canadian Association of Occupational Therapists, 1991</p>
+      <p data-lang="zh">由加拿大作业治疗协会于1991年发展</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 data-lang="en">📋 Overview</h3>
+    <h3 data-lang="zh">📋 概述</h3>
+    <div data-lang="en">
+      <p>The <strong>CMOP-E</strong> is a client-centered model that places the client (person) at the center of three concentric circles representing Person, Environment, and Occupation. The model emphasizes the transactional relationship between the person and environment through occupation, with spirituality as a core element. Occupational performance is shown as the interaction of these three circles.</p>
+    </div>
+    <div data-lang="zh">
+      <p><strong>CMOP-E</strong>是一个以客户为中心的模式，将客户（人）置于代表人、环境和作业的三个同心圆的中心。该模式强调人与环境之间通过作业的交互关系，精神性为核心元素。作业表现显示为这三个圆圈的互动。</p>
+    </div>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-item">
+      <div class="concept-icon">🙏</div>
+      <h5 data-lang="en">Spirituality</h5>
+      <h5 data-lang="zh">精神性</h5>
+      <p data-lang="en">The core — sense of purpose, meaning, and belonging</p>
+      <p data-lang="zh">核心——目的感、意义和归属感</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🧩</div>
+      <h5 data-lang="en">Affect, Cognition, Physique</h5>
+      <h5 data-lang="zh">情感、认知、身体</h5>
+      <p data-lang="en">Three dimensions of the person surrounding spirituality</p>
+      <p data-lang="zh">围绕精神性的人的三个维度</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🔗</div>
+      <h5 data-lang="en">Self-care, Productivity, Leisure</h5>
+      <h5 data-lang="zh">自我照顾、生产、休闲</h5>
+      <p data-lang="en">Three areas of occupation in the outer circle</p>
+      <p data-lang="zh">外圈中的三个作业领域</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🌐</div>
+      <h5 data-lang="en">Environment</h5>
+      <h5 data-lang="zh">环境</h5>
+      <p data-lang="en">Institutional, cultural, physical, social environments</p>
+      <p data-lang="zh">制度、文化、物理、社会环境</p>
+    </div>
+  </div>
+
+  <!-- CMOP-E SVG DIAGRAM -->
+  <div class="diagram-container">
+    <div data-lang="en" style="text-align:center;margin-bottom:12px;font-weight:600;color:var(--primary-dark)">CMOP-E — Concentric Circles</div>
+    <div data-lang="zh" style="text-align:center;margin-bottom:12px;font-weight:600;color:var(--primary-dark)">CMOP-E——同心圆结构</div>
+    <svg class="diagram-svg" viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" width="720" height="420">
+      <!-- Outer circle: Occupation -->
+      <circle cx="360" cy="200" r="180" fill="#FFF8E1" stroke="#D69E2E" stroke-width="3"/>
+      <text x="360" y="36" text-anchor="middle" font-size="12" font-weight="700" fill="#744210">
+        <tspan data-lang="en">OCCUPATION</tspan>
+        <tspan data-lang="zh" display="none">作业</tspan>
+      </text>
+      <text x="195" y="70" text-anchor="middle" font-size="10" fill="#744210">
+        <tspan data-lang="en">Self-care</tspan>
+        <tspan data-lang="zh" display="none">自我照顾</tspan>
+      </text>
+      <text x="525" y="70" text-anchor="middle" font-size="10" fill="#744210">
+        <tspan data-lang="en">Productivity</tspan>
+        <tspan data-lang="zh" display="none">生产</tspan>
+      </text>
+      <text x="360" y="370" text-anchor="middle" font-size="10" fill="#744210">
+        <tspan data-lang="en">Leisure</tspan>
+        <tspan data-lang="zh" display="none">休闲</tspan>
+      </text>
+
+      <!-- Middle circle: Environment -->
+      <circle cx="360" cy="200" r="130" fill="#BEE3F8" stroke="#2B6CB0" stroke-width="3"/>
+      <text x="360" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="#1A4A7A">
+        <tspan data-lang="en">ENVIRONMENT</tspan>
+        <tspan data-lang="zh" display="none">环境</tspan>
+      </text>
+      <text x="240" y="115" text-anchor="middle" font-size="9" fill="#1A4A7A">
+        <tspan data-lang="en">Institutional</tspan>
+        <tspan data-lang="zh" display="none">制度</tspan>
+      </text>
+      <text x="480" y="115" text-anchor="middle" font-size="9" fill="#1A4A7A">
+        <tspan data-lang="en">Cultural</tspan>
+        <tspan data-lang="zh" display="none">文化</tspan>
+      </text>
+      <text x="240" y="290" text-anchor="middle" font-size="9" fill="#1A4A7A">
+        <tspan data-lang="en">Physical</tspan>
+        <tspan data-lang="zh" display="none">物理</tspan>
+      </text>
+      <text x="480" y="290" text-anchor="middle" font-size="9" fill="#1A4A7A">
+        <tspan data-lang="en">Social</tspan>
+        <tspan data-lang="zh" display="none">社会</tspan>
+      </text>
+
+      <!-- Inner circle: Person -->
+      <circle cx="360" cy="200" r="80" fill="#E6FFFA" stroke="#38B2AC" stroke-width="3"/>
+      <text x="360" y="130" text-anchor="middle" font-size="12" font-weight="700" fill="#234E52">
+        <tspan data-lang="en">PERSON</tspan>
+        <tspan data-lang="zh" display="none">人</tspan>
+      </text>
+      <text x="310" y="175" text-anchor="middle" font-size="9" fill="#234E52">
+        <tspan data-lang="en">Affect</tspan>
+        <tspan data-lang="zh" display="none">情感</tspan>
+      </text>
+      <text x="410" y="175" text-anchor="middle" font-size="9" fill="#234E52">
+        <tspan data-lang="en">Cognition</tspan>
+        <tspan data-lang="zh" display="none">认知</tspan>
+      </text>
+      <text x="360" y="230" text-anchor="middle" font-size="9" fill="#234E52">
+        <tspan data-lang="en">Physique</tspan>
+        <tspan data-lang="zh" display="none">身体</tspan>
+      </text>
+
+      <!-- Center: Spirituality -->
+      <circle cx="360" cy="200" r="30" fill="#38B2AC" stroke="#2C7A7B" stroke-width="2"/>
+      <text x="360" y="197" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">
+        <tspan data-lang="en">Spirit</tspan>
+        <tspan data-lang="zh" display="none">精神性</tspan>
+      </text>
+      <text x="360" y="210" text-anchor="middle" font-size="8" fill="#E6FFFA">
+        <tspan data-lang="en">(Core)</tspan>
+        <tspan data-lang="zh" display="none">（核心）</tspan>
+      </text>
+
+      <!-- Occupational Performance label -->
+      <rect x="220" y="390" width="280" height="24" rx="6" fill="#2B6CB0"/>
+      <text x="360" y="407" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">
+        <tspan data-lang="en">Occupational Performance = Interaction of all 3</tspan>
+        <tspan data-lang="zh" display="none">作业表现 = 三者的互动</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <!-- CASE STUDY -->
+  <div class="case-study">
+    <h4 data-lang="en">📌 Clinical Case Study</h4>
+    <h4 data-lang="zh">📌 临床案例</h4>
+    <div data-lang="en">
+      <p><strong>Scenario:</strong> Priya, 45, a recent immigrant, feels isolated and disconnected from her family. Using CMOP-E, the OT explores her <em>spirituality</em> (sense of purpose through family caregiving), <em>affect/cognition/physique</em> (grief, language barriers, physical health), and the <em>environment</em> (new country, different cultural norms, social isolation). Intervention focuses on connecting Priya with cultural community groups, enabling her to resume caregiving roles, and addressing her sense of meaning and belonging.</p>
+    </div>
+    <div data-lang="zh">
+      <p><strong>情境：</strong>Priya，45岁，新移民，感到孤立并与家人疏远。使用CMOP-E，作业治疗师探索了她的<em>精神性</em>（通过家庭照顾获得的目的感）、<em>情感/认知/身体</em>（悲伤、语言障碍、身体健康）和<em>环境</em>（新国家、不同的文化规范、社会孤立）。干预重点是帮助Priya与文化社区群体建立联系，使她能够恢复照顾角色，并解决她的意义感和归属感问题。</p>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz-box" id="quiz-cmope">
+    <h4 data-lang="en">📝 Quick Check — CMOP-E</h4>
+    <h4 data-lang="zh">📝 快速测试 — CMOP-E</h4>
+    <div data-lang="en">
+      <p>What is placed at the very center of the CMOP-E model?</p>
+    </div>
+    <div data-lang="zh">
+      <p>在CMOP-E模式的最中心放置的是什么？</p>
+    </div>
+    <div class="quiz-options">
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-cmope')">
+        <span class="marker">A</span>
+        <span data-lang="en">Occupational Performance</span><span data-lang="zh">作业表现</span>
+      </div>
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-cmope')">
+        <span class="marker">B</span>
+        <span data-lang="en">Cognition</span><span data-lang="zh">认知</span>
+      </div>
+      <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'quiz-cmope')">
+        <span class="marker">C</span>
+        <span data-lang="en">Spirituality</span><span data-lang="zh">精神性</span>
+      </div>
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-cmope')">
+        <span class="marker">D</span>
+        <span data-lang="en">Environment</span><span data-lang="zh">环境</span>
+      </div>
+    </div>
+    <button class="quiz-btn" onclick="checkQuiz('quiz-cmope')" data-lang="en">Check Answer</button>
+    <button class="quiz-btn" onclick="checkQuiz('quiz-cmope')" data-lang="zh">检查答案</button>
+    <div class="quiz-feedback" id="feedback-quiz-cmope" data-lang="en">
+      ✅ <strong>Correct!</strong> Spirituality is at the very center of the CMOP-E model, representing the core of human existence — the sense of purpose, meaning, and belonging. It is surrounded by affect, cognition, and physique, which together form the Person component.
+    </div>
+    <div class="quiz-feedback" id="feedback-quiz-cmope-zh" data-lang="zh">
+      ✅ <strong>正确！</strong>精神性位于CMOP-E模式的最中心，代表人类存在的核心——目的感、意义和归属感。它被情感、认知和身体所环绕，三者共同构成了人的组成部分。
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== MODULE 4: KAWA MODEL ===== -->
+<section class="section" id="kawa">
+  <div class="module-header">
+    <div class="module-number">4</div>
+    <div class="module-header-text">
+      <h2 data-lang="en">Kawa Model (River Model)</h2>
+      <h2 data-lang="zh">河川模型（Kawa Model）</h2>
+      <p data-lang="en">Developed by Michael Iwama, 2006</p>
+      <p data-lang="zh">由Michael Iwama于2006年发展</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 data-lang="en">📋 Overview</h3>
+    <h3 data-lang="zh">📋 概述</h3>
+    <div data-lang="en">
+      <p>The <strong>Kawa (River) Model</strong> uses the metaphor of a river to represent life. In Japanese, "Kawa" means river. The model was developed to be more culturally inclusive, particularly for Asian and non-Western populations. It views life as a complex, dynamic, and constantly changing system — much like the flow of a river. Occupational therapy is seen as the process of modifying the river's flow to maximize well-being.</p>
+    </div>
+    <div data-lang="zh">
+      <p><strong>河川模型</strong>使用河流的隐喻来代表生活。在日语中，"Kawa"意为河流。该模式旨在更具文化包容性，特别是针对亚洲和非西方人群。它将生活视为一个复杂、动态且不断变化的系统——就像河流的流动。作业治疗被视为修改河流水流以最大化幸福的过程。</p>
+    </div>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-item">
+      <div class="concept-icon">🌊</div>
+      <h5 data-lang="en">Water Flow (Kawa)</h5>
+      <h5 data-lang="zh">水流（Kawa）</h5>
+      <p data-lang="en">Life energy and flow of occupations</p>
+      <p data-lang="zh">生命能量和作业之流</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🪨</div>
+      <h5 data-lang="en">Rocks (Iwa)</h5>
+      <h5 data-lang="zh">岩石（Iwa）</h5>
+      <p data-lang="en">Life circumstances and problems that obstruct flow</p>
+      <p data-lang="zh">阻碍流动的生活环境和困难</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🌿</div>
+      <h5 data-lang="en">Driftwood (Ryuboku)</h5>
+      <h5 data-lang="zh">漂流木（Ryuboku）</h5>
+      <p data-lang="en">Personal assets and liabilities that affect flow</p>
+      <p data-lang="zh">影响流动的个人资产和负债</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🏞️</div>
+      <h5 data-lang="en">Riverbed &amp; Banks (Mizutori)</h5>
+      <h5 data-lang="zh">河床与河岸（Mizutori）</h5>
+      <p data-lang="en">Social and physical environment that shapes the river</p>
+      <p data-lang="zh">塑造河流的社会和物理环境</p>
+    </div>
+    <div class="concept-item">
+      <div class="concept-icon">🐟</div>
+      <h5 data-lang="en">Spaces (Sukima)</h5>
+      <h5 data-lang="zh">空间（Sukima）</h5>
+      <p data-lang="en">Gaps between rocks where flow can still occur</p>
+      <p data-lang="zh">岩石之间的缝隙，流动仍可发生的地方</p>
+    </div>
+  </div>
+
+  <!-- KAWA SVG DIAGRAM -->
+  <div class="diagram-container">
+    <div data-lang="en" style="text-align:center;margin-bottom:12px;font-weight:600;color:var(--primary-dark)">Kawa Model — Life as a River</div>
+    <div data-lang="zh" style="text-align:center;margin-bottom:12px;font-weight:600;color:var(--primary-dark)">河川模型——生活如河流</div>
+    <svg class="diagram-svg" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" width="720" height="360">
+      <!-- River banks -->
+      <path d="M60,40 Q200,20 360,30 Q520,40 660,20 L680,340 Q520,360 360,350 Q200,340 60,360 Z" fill="#E3F2FD" stroke="#2B6CB0" stroke-width="2"/>
+
+      <!-- River water -->
+      <path d="M100,60 Q250,40 360,50 Q470,60 620,40 L640,320 Q470,340 360,330 Q250,320 100,340 Z" fill="#90CDF4" opacity="0.6" stroke="#38B2AC" stroke-width="1"/>
+
+      <!-- Water flow arrows -->
+      <line x1="150" y1="180" x2="200" y2="180" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="300" y1="150" x2="350" y2="150" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="450" y1="200" x2="500" y2="200" stroke="#2B6CB0" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <!-- Rocks -->
+      <ellipse cx="200" cy="150" rx="40" ry="30" fill="#A0AEC0" stroke="#718096" stroke-width="2"/>
+      <text x="200" y="147" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">
+        <tspan data-lang="en">Iwa</tspan>
+        <tspan data-lang="zh" display="none">岩石</tspan>
+      </text>
+      <text x="200" y="163" text-anchor="middle" font-size="8" fill="#E2E8F0">
+        <tspan data-lang="en">(Problems)</tspan>
+        <tspan data-lang="zh" display="none">（困难）</tspan>
+      </text>
+
+      <ellipse cx="420" cy="220" rx="50" ry="35" fill="#A0AEC0" stroke="#718096" stroke-width="2"/>
+      <text x="420" y="217" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">
+        <tspan data-lang="en">Iwa</tspan>
+        <tspan data-lang="zh" display="none">岩石</tspan>
+      </text>
+      <text x="420" y="233" text-anchor="middle" font-size="8" fill="#E2E8F0">
+        <tspan data-lang="en">(Barriers)</tspan>
+        <tspan data-lang="zh" display="none">（障碍）</tspan>
+      </text>
+
+      <ellipse cx="310" cy="280" rx="30" ry="20" fill="#A0AEC0" stroke="#718096" stroke-width="2"/>
+      <text x="310" y="277" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Iwa</text>
+
+      <!-- Driftwood -->
+      <path d="M250,100 Q270,80 290,100 Q270,120 250,100" fill="#D69E2E" stroke="#B7791F" stroke-width="1.5"/>
+      <text x="270" y="78" text-anchor="middle" font-size="8" fill="#744210">
+        <tspan data-lang="en">Ryuboku</tspan>
+        <tspan data-lang="zh" display="none">漂流木</tspan>
+      </text>
+
+      <path d="M500,130 Q520,110 540,130 Q520,150 500,130" fill="#D69E2E" stroke="#B7791F" stroke-width="1.5"/>
+      <text x="520" y="108" text-anchor="middle" font-size="8" fill="#744210">Ryuboku</text>
+
+      <!-- Spaces (Sukima) -->
+      <circle cx="260" cy="200" r="12" fill="#48BB78" opacity="0.7"/>
+      <text x="260" y="178" text-anchor="middle" font-size="8" fill="#22543D">
+        <tspan data-lang="en">Sukima</tspan>
+        <tspan data-lang="zh" display="none">空间</tspan>
+      </text>
+
+      <circle cx="380" cy="160" r="10" fill="#48BB78" opacity="0.7"/>
+      <text x="380" y="140" text-anchor="middle" font-size="8" fill="#22543D">Sukima</text>
+
+      <!-- River banks labels -->
+      <text x="100" y="50" text-anchor="middle" font-size="9" fill="#2B6CB0" font-weight="600">
+        <tspan data-lang="en">River Banks</tspan>
+        <tspan data-lang="zh" display="none">河岸</tspan>
+      </text>
+      <text x="100" y="62" text-anchor="middle" font-size="8" fill="#718096">
+        <tspan data-lang="en">(Environment)</tspan>
+        <tspan data-lang="zh" display="none">（环境）</tspan>
+      </text>
+
+      <text x="620" y="340" text-anchor="middle" font-size="9" fill="#2B6CB0" font-weight="600">
+        <tspan data-lang="en">Riverbed</tspan>
+        <tspan data-lang="zh" display="none">河床</tspan>
+      </text>
+
+      <!-- Water flow label -->
+      <text x="360" y="110" text-anchor="middle" font-size="11" font-weight="700" fill="#1A4A7A">
+        <tspan data-lang="en">Kawa — Life Flow / Occupational Flow</tspan>
+        <tspan data-lang="zh" display="none">Kawa — 生命之流/作业之流</tspan>
+      </text>
+    </svg>
+  </div>
+
+  <!-- CASE STUDY -->
+  <div class="case-study">
+    <h4 data-lang="en">📌 Clinical Case Study</h4>
+    <h4 data-lang="zh">📌 临床案例</h4>
+    <div data-lang="en">
+      <p><strong>Scenario:</strong> Tanaka-san, 55, a Japanese salaryman, has been diagnosed with depression following redundancy. Using the Kawa Model, the OT maps his life as a river: <em>rocks</em> (job loss, financial stress), <em>driftwood</em> (his professional skills, family support, resilience), <em>riverbed</em> (Japanese workplace culture, societal expectations of masculinity). The OT works with Tanaka to identify <em>spaces (sukima)</em> — opportunities to redirect his energy through volunteer work and mentoring younger colleagues, gradually widening the flow and improving well-being.</p>
+    </div>
+    <div data-lang="zh">
+      <p><strong>情境：</strong>Tanaka先生，55岁，日本工薪族，在被裁员后被诊断出抑郁症。使用河川模型，作业治疗师将他的生活映射为一条河流：<em>岩石</em>（失业、财务压力）、<em>漂流木</em>（专业技能、家庭支持、韧性）、<em>河床</em>（日本职场文化、男性气概的社会期望）。作业治疗师与Tanaka合作识别<em>空间（sukima）</em>——通过志愿工作和指导年轻同事重新引导能量的机会，逐步拓宽流动并改善幸福感。</p>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz-box" id="quiz-kawa">
+    <h4 data-lang="en">📝 Quick Check — Kawa Model</h4>
+    <h4 data-lang="zh">📝 快速测试 — 河川模型</h4>
+    <div data-lang="en">
+      <p>In the Kawa Model, what do "rocks" (Iwa) represent?</p>
+    </div>
+    <div data-lang="zh">
+      <p>在河川模型中，"岩石"（Iwa）代表什么？</p>
+    </div>
+    <div class="quiz-options">
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-kawa')">
+        <span class="marker">A</span>
+        <span data-lang="en">Personal strengths and resources</span><span data-lang="zh">个人优势和资源</span>
+      </div>
+      <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'quiz-kawa')">
+        <span class="marker">B</span>
+        <span data-lang="en">Life circumstances that obstruct the flow of life</span><span data-lang="zh">阻碍生命流动的生活环境</span>
+      </div>
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-kawa')">
+        <span class="marker">C</span>
+        <span data-lang="en">The social environment</span><span data-lang="zh">社会环境</span>
+      </div>
+      <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'quiz-kawa')">
+        <span class="marker">D</span>
+        <span data-lang="en">Occupational performance outcomes</span><span data-lang="zh">作业表现结果</span>
+      </div>
+    </div>
+    <button class="quiz-btn" onclick="checkQuiz('quiz-kawa')" data-lang="en">Check Answer</button>
+    <button class="quiz-btn" onclick="checkQuiz('quiz-kawa')" data-lang="zh">检查答案</button>
+    <div class="quiz-feedback" id="feedback-quiz-kawa" data-lang="en">
+      ✅ <strong>Correct!</strong> In the Kawa Model, rocks (Iwa) represent life circumstances and problems that obstruct the natural flow of life — like illness, trauma, or difficult life events. The OT's goal is to find or create spaces (sukima) between and around these rocks to allow life energy to flow.
+    </div>
+    <div class="quiz-feedback" id="feedback-quiz-kawa-zh" data-lang="zh">
+      ✅ <strong>正确！</strong>在河川模型中，岩石（Iwa）代表阻碍生命自然流动的生活环境和困难——如疾病、创伤或困难的生活事件。作业治疗师的目标是在这些岩石之间和周围寻找或创造空间（sukima），使生命能量能够流动。
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== FINAL QUIZ ===== -->
+<section class="section" id="final">
+  <div class="module-header">
+    <div class="module-number">✓</div>
+    <div class="module-header-text">
+      <h2 data-lang="en">Final Comprehensive Assessment</h2>
+      <h2 data-lang="zh">综合评估测试</h2>
+      <p data-lang="en">Test your understanding across all four models</p>
+      <p data-lang="zh">测试您对四种模式的理解</p>
+    </div>
+  </div>
+
+  <div class="final-quiz" id="finalQuiz">
+    <h3 data-lang="en">🎓 Comprehensive Quiz</h3>
+    <h3 data-lang="zh">🎓 综合测验</h3>
+    <p style="opacity:.85;margin-bottom:20px" data-lang="en">Answer all questions below. Click "Check" to see immediate feedback.</p>
+    <p style="opacity:.85;margin-bottom:20px" data-lang="zh">回答以下所有问题。点击"检查"查看即时反馈。</p>
+
+    <!-- Q1 -->
+    <div class="quiz-question" id="fq1">
+      <p data-lang="en"><strong>Q1.</strong> Which model was developed by Gary Kielhofner?</p>
+      <p data-lang="zh"><strong>Q1.</strong>哪个模式由Gary Kielhofner发展？</p>
+      <div class="quiz-options">
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq1')">
+          <span class="marker">A</span><span data-lang="en">PEOP Model</span><span data-lang="zh">PEOP模式</span>
+        </div>
+        <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'fq1')">
+          <span class="marker">B</span><span data-lang="en">MOHO</span><span data-lang="zh">MOHO</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq1')">
+          <span class="marker">C</span><span data-lang="en">CMOP-E</span><span data-lang="zh">CMOP-E</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq1')">
+          <span class="marker">D</span><span data-lang="en">Kawa Model</span><span data-lang="zh">河川模型</span>
+        </div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('fq1')" data-lang="en">Check</button>
+      <button class="quiz-btn" onclick="checkQuiz('fq1')" data-lang="zh">检查</button>
+      <div class="quiz-feedback" id="feedback-fq1" data-lang="en">✅ <strong>Correct!</strong> Gary Kielhofner developed the Model of Human Occupation (MOHO) in the 1980s, making it one of the most extensively researched OT models.</div>
+      <div class="quiz-feedback" id="feedback-fq1-zh" data-lang="zh">✅ <strong>正确！</strong>Gary Kielhofner于1980年代发展了人类作业模式（MOHO），使其成为研究最广泛的作业治疗模式之一。</div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="quiz-question" id="fq2">
+      <p data-lang="en"><strong>Q2.</strong> The PEOP model uses which approach to assessment and intervention?</p>
+      <p data-lang="zh"><strong>Q2.</strong>PEOP模式在评估和干预中使用哪种方法？</p>
+      <div class="quiz-options">
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq2')">
+          <span class="marker">A</span><span data-lang="en">Bottom-up</span><span data-lang="zh">自下而上</span>
+        </div>
+        <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'fq2')">
+          <span class="marker">B</span><span data-lang="en">Top-down</span><span data-lang="zh">自上而下</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq2')">
+          <span class="marker">C</span><span data-lang="en">Lateral</span><span data-lang="zh">横向</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq2')">
+          <span class="marker">D</span><span data-lang="en">Circular</span><span data-lang="zh">循环</span>
+        </div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('fq2')" data-lang="en">Check</button>
+      <button class="quiz-btn" onclick="checkQuiz('fq2')" data-lang="zh">检查</button>
+      <div class="quiz-feedback" id="feedback-fq2" data-lang="en">✅ <strong>Correct!</strong> PEOP is a top-down model — it begins by identifying what the person wants and needs to do (occupations), then explores the person, environment, and occupation factors affecting performance.</div>
+      <div class="quiz-feedback" id="feedback-fq2-zh" data-lang="zh">✅ <strong>正确！</strong>PEOP是自上而下的模式——它首先识别人们想要和需要做什么（作业），然后探索影响表现的个体、环境和作业因素。</div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="quiz-question" id="fq3">
+      <p data-lang="en"><strong>Q3.</strong> In CMOP-E, spirituality is positioned as:</p>
+      <p data-lang="zh"><strong>Q3.</strong>在CMOP-E中，精神性被定位为：</p>
+      <div class="quiz-options">
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq3')">
+          <span class="marker">A</span><span data-lang="en">An external environmental factor</span><span data-lang="zh">外部环境因素</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq3')">
+          <span class="marker">B</span><span data-lang="en">A type of occupation</span><span data-lang="zh">一种作业类型</span>
+        </div>
+        <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'fq3')">
+          <span class="marker">C</span><span data-lang="en">The core of the person, at the center of the model</span><span data-lang="zh">人的核心，位于模式的中心</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq3')">
+          <span class="marker">D</span><span data-lang="en">An outcome measure</span><span data-lang="zh">一种结果测量</span>
+        </div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('fq3')" data-lang="en">Check</button>
+      <button class="quiz-btn" onclick="checkQuiz('fq3')" data-lang="zh">检查</button>
+      <div class="quiz-feedback" id="feedback-fq3" data-lang="en">✅ <strong>Correct!</strong> In CMOP-E, spirituality sits at the very center of the Person component, representing the essential sense of meaning, purpose, and belonging that drives all occupational engagement.</div>
+      <div class="quiz-feedback" id="feedback-fq3-zh" data-lang="zh">✅ <strong>正确！</strong>在CMOP-E中，精神性位于人的组成部分的最中心，代表驱动所有作业参与的意义的、目的和归属感的基本感觉。</div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="quiz-question" id="fq4">
+      <p data-lang="en"><strong>Q4.</strong> The Kawa Model was developed primarily to address:</p>
+      <p data-lang="zh"><strong>Q4.</strong>河川模型的发展主要是为了解决：</p>
+      <div class="quiz-options">
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq4')">
+          <span class="marker">A</span><span data-lang="en">Pediatric occupational therapy</span><span data-lang="zh">儿科作业治疗</span>
+        </div>
+        <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'fq4')">
+          <span class="marker">B</span><span data-lang="en">Cultural inclusivity and non-Western perspectives</span><span data-lang="zh">文化包容性和非西方视角</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq4')">
+          <span class="marker">C</span><span data-lang="en">Neurological rehabilitation only</span><span data-lang="zh">仅限神经康复</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq4')">
+          <span class="marker">D</span><span data-lang="en">Workplace ergonomics</span><span data-lang="zh">工作场所人体工学</span>
+        </div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('fq4')" data-lang="en">Check</button>
+      <button class="quiz-btn" onclick="checkQuiz('fq4')" data-lang="zh">检查</button>
+      <div class="quiz-feedback" id="feedback-fq4" data-lang="en">✅ <strong>Correct!</strong> Michael Iwama developed the Kawa Model to be culturally inclusive, drawing on Eastern philosophy and metaphors (the river) to make OT more relevant to non-Western and Asian populations.</div>
+      <div class="quiz-feedback" id="feedback-fq4-zh" data-lang="zh">✅ <strong>正确！</strong>Michael Iwama发展河川模型以实现文化包容性，借鉴东方哲学和隐喻（河流）使作业治疗与非西方和亚洲人群更加相关。</div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="quiz-question" id="fq5">
+      <p data-lang="en"><strong>Q5.</strong> Which model uses the three subsystems of Volition, Habituation, and Performance Capacity?</p>
+      <p data-lang="zh"><strong>Q5.</strong>哪个模式使用意志、习惯化和表现能力三个子系统？</p>
+      <div class="quiz-options">
+        <div class="quiz-opt" data-correct="true" onclick="selectOpt(this,'fq5')">
+          <span class="marker">A</span><span data-lang="en">MOHO</span><span data-lang="zh">MOHO</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq5')">
+          <span class="marker">B</span><span data-lang="en">PEOP</span><span data-lang="zh">PEOP</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq5')">
+          <span class="marker">C</span><span data-lang="en">CMOP-E</span><span data-lang="zh">CMOP-E</span>
+        </div>
+        <div class="quiz-opt" data-correct="false" onclick="selectOpt(this,'fq5')">
+          <span class="marker">D</span><span data-lang="en">Kawa Model</span><span data-lang="zh">河川模型</span>
+        </div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('fq5')" data-lang="en">Check</button>
+      <button class="quiz-btn" onclick="checkQuiz('fq5')" data-lang="zh">检查</button>
+      <div class="quiz-feedback" id="feedback-fq5" data-lang="en">✅ <strong>Correct!</strong> MOHO organizes the person's occupational behavior through three subsystems: Volition (motivation), Habituation (patterns), and Performance Capacity (abilities), all interacting with the environment.</div>
+      <div class="quiz-feedback" id="feedback-fq5-zh" data-lang="zh">✅ <strong>正确！</strong>MOHO通过三个子系统组织个人的作业行为：意志（动机）、习惯化（模式）和表现能力（能力），三者都与环境互动。</div>
+    </div>
+
+    <!-- Score -->
+    <div class="score-bar" id="scoreBar">
+      <div data-lang="en" id="scoreText">Your Score: </div>
+      <div data-lang="zh" id="scoreTextZh">您的得分：</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div data-lang="en">
+    <p>OT Conceptual Models Interactive Course &copy; 2024 — Built for Education</p>
+    <p style="margin-top:6px;opacity:.7">This course is for educational purposes. Content based on established OT literature.</p>
+  </div>
+  <div data-lang="zh">
+    <p>作业治疗概念模式互动课程 &copy; 2024 — 为教育而建</p>
+    <p style="margin-top:6px;opacity:.7">本课程用于教育目的。内容基于已建立的作业治疗文献。</p>
+  </div>
+</footer>
+
+<script>
+/* ===== LANGUAGE TOGGLE ===== */
+let currentLang = 'en';
+function toggleLang() {
+  currentLang = currentLang === 'en' ? 'zh' : 'en';
+  document.body.classList.toggle('zh', currentLang === 'zh');
+  document.getElementById('langToggle').textContent = currentLang === 'en' ? '中文 Chinese' : 'English 英文';
+  document.documentElement.lang = currentLang;
+  updateDiagramLabels();
+}
+
+/* ===== QUIZ LOGIC ===== */
+const quizState = {};
+
+function selectOpt(el, quizId) {
+  if (quizState[quizId]) return; // already answered
+  const parent = el.closest('.quiz-options');
+  parent.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function checkQuiz(quizId) {
+  if (quizState[quizId]) return;
+  const quizEl = document.getElementById(quizId);
+  const opts = quizEl.querySelectorAll('.quiz-opt');
+  let selected = null;
+  let correct = null;
+
+  opts.forEach(opt => {
+    if (opt.classList.contains('selected')) selected = opt;
+    if (opt.dataset.correct === 'true') correct = opt;
+  });
+
+  if (!selected) {
+    // No selection made — highlight nothing
+    return;
+  }
+
+  quizState[quizId] = true;
+  const isCorrect = selected.dataset.correct === 'true';
+
+  // Mark all options
+  opts.forEach(opt => {
+    opt.style.pointerEvents = 'none';
+    if (opt.dataset.correct === 'true') {
+      opt.classList.add('correct');
+    }
+  });
+
+  if (!isCorrect) {
+    selected.classList.add('incorrect');
+  }
+
+  // Show feedback
+  const fb = document.getElementById('feedback-' + quizId);
+  if (fb) fb.classList.add('show');
+
+  // Also show zh feedback if applicable
+  const fbZh = document.getElementById('feedback-' + quizId + '-zh');
+  if (fbZh) fbZh.classList.add('show');
+
+  // Update buttons
+  const btns = quizEl.querySelectorAll('.quiz-btn');
+  btns.forEach(b => b.disabled = true);
+
+  // Track final quiz score
+  if (quizId.startsWith('fq')) {
+    updateFinalScore();
+  }
+}
+
+function updateFinalScore() {
+  const total = 5;
+  let answered = 0;
+  let correct = 0;
+  for (let i = 1; i <= total; i++) {
+    const qId = 'fq' + i;
+    if (quizState[qId]) {
+      answered++;
+      const quizEl = document.getElementById(qId);
+      const selected = quizEl.querySelector('.quiz-opt.selected');
+      if (selected && selected.dataset.correct === 'true') correct++;
+    }
+  }
+  const bar = document.getElementById('scoreBar');
+  if (answered === total) {
+    bar.classList.add('show');
+    document.getElementById('scoreText').textContent = 'Your Score: ' + correct + ' / ' + total + (correct >= 4 ? ' — Excellent! 🎉' : correct >= 3 ? ' — Good job! 👍' : ' — Keep learning! 📚');
+    document.getElementById('scoreTextZh').textContent = '您的得分：' + correct + ' / ' + total + (correct >= 4 ? ' — 优秀！🎉' : correct >= 3 ? ' — 做得好！👍' : ' — 继续学习！📚');
+  }
+}
+
+/* ===== NAVBAR ACTIVE STATE ===== */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+
+function updateNav() {
+  let current = '';
+  sections.forEach(s => {
+    const top = s.offsetTop - 100;
+    if (window.scrollY >= top) current = s.getAttribute('id');
+  });
+  navLinks.forEach(l => {
+    l.classList.remove('active');
+    if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+  });
+}
+
+/* ===== PROGRESS BAR ===== */
+function updateProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+window.addEventListener('scroll', () => { updateNav(); updateProgress(); }, { passive: true });
+updateNav();
+updateProgress();
+
+/* ===== DIAGRAM LABEL UPDATE ON LANG CHANGE ===== */
+function updateDiagramLabels() {
+  // SVG text elements use data-lang attributes; we toggle display via CSS
+  // The CSS already handles [data-lang] visibility based on body.zh class
+  // For SVG elements, we need to handle display differently
+  document.querySelectorAll('svg [data-lang]').forEach(el => {
+    if (currentLang === 'zh') {
+      if (el.getAttribute('data-lang') === 'en') {
+        el.style.display = 'none';
+      } else {
+        el.style.display = '';
+      }
+    } else {
+      if (el.getAttribute('data-lang') === 'zh') {
+        el.style.display = 'none';
+      } else {
+        el.style.display = '';
+      }
+    }
+  });
+}
+// Initial call
+updateDiagramLabels();
+</script>
+</body>
+</html>

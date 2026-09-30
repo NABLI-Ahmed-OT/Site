@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Jeux interactifs – Labyrinthe, Triangles, Hamburgers</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#fff; --ink:#20243a; --muted:#6d7285;
+    --accent:#6f39a8; --ok:#2da44e; --bad:#d73a49; --soft:#ece7f5;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Arial, Helvetica, sans-serif; color:var(--ink);
+    background:linear-gradient(180deg,#f7f5fb,#eef3f8);
+  }
+  header{
+    position:sticky; top:0; z-index:10; padding:14px 18px;
+    background:rgba(255,255,255,.96); border-bottom:1px solid #ddd;
+    display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  }
+  h1{font-size:1.2rem;margin:0}
+  nav{display:flex;gap:8px;flex-wrap:wrap}
+  button{
+    border:0; border-radius:12px; padding:10px 14px; font-weight:700;
+    cursor:pointer; background:#eee; color:var(--ink);
+  }
+  button.primary{background:var(--accent);color:#fff}
+  button.good{background:var(--ok);color:#fff}
+  main{max-width:1050px;margin:auto;padding:18px}
+  .game{
+    background:var(--card); border-radius:18px; padding:18px; margin-bottom:20px;
+    box-shadow:0 6px 24px rgba(24,30,60,.08);
+  }
+  .game h2{margin:0 0 6px;font-size:1.25rem}
+  .subtitle{color:var(--muted);margin:0 0 14px}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .score{font-weight:700}
+  .status{min-height:22px;font-weight:700}
+  .ok{color:var(--ok)} .bad{color:var(--bad)}
+  .hidden{display:none!important}
+
+  /* Maze */
+  #mazeWrap{touch-action:none; user-select:none; width:100%; overflow:auto}
+  #maze{width:100%; min-width:720px; height:auto; background:#fff; border:1px solid #ddd; border-radius:14px}
+  .wall{stroke:var(--accent);stroke-width:8;stroke-linecap:round;fill:none}
+  #trace{stroke:#ff6b35;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;fill:none}
+  #goalRing{fill:#fff;stroke:#2da44e;stroke-width:6}
+  #playerDot{fill:#ff6b35;stroke:#fff;stroke-width:4}
+  .maze-label{font-size:26px;font-weight:700}
+
+  /* Shapes */
+  .shapeGrid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:14px; margin-top:14px;
+  }
+  .shapeCard{
+    min-height:115px; border:2px solid #d7dae5; border-radius:14px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    background:#fff; transition:.15s;
+  }
+  .shapeCard:hover{transform:translateY(-2px)}
+  .shapeCard.selected{background:#e6f6eb;border-color:var(--ok)}
+  .shapeCard.wrong{animation:shake .25s linear}
+  @keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .shape{width:78px;height:78px}
+  .shape polygon,.shape circle,.shape rect{fill:#fff;stroke:#333;stroke-width:4}
+  .shapeCard.selected .shape polygon{fill:#7ee081}
+
+  /* Burger game */
+  .burgerGrid{
+    display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); gap:14px;
+  }
+  @media(max-width:760px){.burgerGrid{grid-template-columns:repeat(2,minmax(130px,1fr))}}
+  .burger{
+    border:2px solid #e0e1e8;border-radius:14px;padding:14px;text-align:center;background:#fff;
+  }
+  .burgerVisual{font-size:62px;line-height:1}
+  .dropzone{
+    margin-top:10px; min-height:44px;border:2px dashed #bbb;border-radius:10px;
+    padding:8px;display:flex;align-items:center;justify-content:center;font-weight:700;
+  }
+  .dropzone.good{border-color:var(--ok);background:#eaf8ef}
+  .choices{
+    display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;margin-top:16px;
+  }
+  @media(max-width:800px){.choices{grid-template-columns:repeat(2,minmax(150px,1fr))}}
+  @media(max-width:480px){.choices{grid-template-columns:1fr}}
+  .choice{
+    border:2px solid #dcdde5;border-radius:14px;padding:12px;background:#fafafa;
+    cursor:grab; user-select:none;
+  }
+  .choice strong{display:block;margin-bottom:5px}
+  .choice .icons{font-size:24px;line-height:1.4}
+  .choice.used{opacity:.35}
+  .legend{font-size:.88rem;color:var(--muted)}
+  footer{text-align:center;color:var(--muted);padding:14px 0 28px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Activités interactives</h1>
+  <nav>
+    <button onclick="scrollToGame('mazeGame')">Labyrinthe</button>
+    <button onclick="scrollToGame('shapeGame')">Triangles</button>
+    <button onclick="scrollToGame('burgerGame')">Hamburgers</button>
+  </nav>
+</header>
+
+<main>
+<section class="game" id="mazeGame">
+  <h2>1. Aide l’agneau à rejoindre les moutons</h2>
+  <p class="subtitle">Trace le chemin avec la souris, le doigt ou le stylet. Si tu touches un mur, tu recommences au dernier point sûr.</p>
+  <div class="toolbar">
+    <button class="primary" id="mazeStartBtn">Commencer</button>
+    <button id="mazeResetBtn">Réinitialiser</button>
+    <span class="score">Erreurs : <span id="mazeErrors">0</span></span>
+    <span class="score">Temps : <span id="mazeTime">0.0</span>s</span>
+  </div>
+  <div class="status" id="mazeStatus"></div>
+
+  <div id="mazeWrap">
+  <svg id="maze" viewBox="0 0 900 520" aria-label="Labyrinthe interactif">
+    <rect x="12" y="12" width="876" height="496" rx="16" fill="#fff" stroke="#d9d5e5" stroke-width="3"/>
+    <text x="55" y="475" class="maze-label">🐑</text>
+    <text x="795" y="70" class="maze-label">🐑🐑</text>
+
+    <!-- outer + internal walls, deliberately leaving one solvable route -->
+    <path class="wall" d="M120 440 L120 360 L220 360 L220 290 L90 290 L90 185 L185 185 L185 85 L285 85 L285 210 L400 210"/>
+    <path class="wall" d="M145 455 L290 455 L290 390 L410 390 L410 320 L520 320 L520 200 L430 200 L430 120 L540 120 L540 70"/>
+    <path class="wall" d="M255 290 L355 290 L355 365"/>
+    <path class="wall" d="M350 455 L350 425 L470 425 L470 470 L625 470 L625 400"/>
+    <path class="wall" d="M480 365 L640 365 L640 125 L715 125 L715 420"/>
+    <path class="wall" d="M590 70 L770 70 L770 165 L700 165 L700 255 L770 255 L770 345"/>
+    <path class="wall" d="M315 85 L315 165 L460 165"/>
+    <path class="wall" d="M90 115 L140 115 L140 230 L250 230"/>
+    <path class="wall" d="M90 330 L160 330"/>
+    <path class="wall" d="M540 245 L610 245"/>
+    <path class="wall" d="M430 70 L500 70"/>
+    <path class="wall" d="M640 400 L780 400 L780 315"/>
+    <path class="wall" d="M820 400 L820 215 L860 215 L860 115"/>
+    <path class="wall" d="M785 165 L835 165"/>
+    <path class="wall" d="M120 440 L150 440"/>
+
+    <circle id="goalRing" cx="820" cy="90" r="24"/>
+    <circle id="playerDot" cx="80" cy="430" r="13"/>
+    <polyline id="trace" points="80,430"/>
+  </svg>
+  </div>
+</section>
+
+<section class="game" id="shapeGame">
+  <h2>2. Colorie tous les triangles</h2>
+  <p class="subtitle">Clique uniquement sur les triangles. Chaque bonne réponse rapporte 1 point.</p>
+  <div class="toolbar">
+    <button class="primary" id="shapeReset">Nouvelle série</button>
+    <span class="score">Score : <span id="shapeScore">0</span> / <span id="triangleTotal">0</span></span>
+  </div>
+  <div class="status" id="shapeStatus"></div>
+  <div class="shapeGrid" id="shapeGrid"></div>
+</section>
+
+<section class="game" id="burgerGame">
+  <h2>3. Associe chaque hamburger à ses ingrédients</h2>
+  <p class="subtitle">Glisse la bonne carte d’ingrédients sous chaque hamburger, ou touche une carte puis un hamburger sur mobile.</p>
+  <div class="toolbar">
+    <button class="primary" id="burgerReset">Recommencer</button>
+    <span class="score">Bonnes réponses : <span id="burgerScore">0</span> / 4</span>
+  </div>
+  <div class="status" id="burgerStatus"></div>
+
+  <div class="burgerGrid" id="burgerGrid"></div>
+  <p class="legend">🥩 steak · 🧀 fromage · 🍅 tomate · 🥬 salade · 🥒 concombre · 🧅 oignon · 🥓 jambon · 🌭 salami</p>
+  <div class="choices" id="choices"></div>
+</section>
+</main>
+
+<footer>Version HTML autonome • fonctionne sur ordinateur, tablette et smartphone</footer>
+
+<script>
+function scrollToGame(id){document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});}
+
+/* ---------------- MAZE ---------------- */
+const maze = document.getElementById('maze');
+const trace = document.getElementById('trace');
+const dot = document.getElementById('playerDot');
+const errEl = document.getElementById('mazeErrors');
+const timeEl = document.getElementById('mazeTime');
+const mazeStatus = document.getElementById('mazeStatus');
+let drawing=false, errors=0, points=[[80,430]], lastSafe=[80,430], startTime=null, timerId=null, finished=false;
+
+function svgPoint(evt){
+  const pt=maze.createSVGPoint();
+  pt.x=evt.clientX; pt.y=evt.clientY;
+  return pt.matrixTransform(maze.getScreenCTM().inverse());
+}
+function distPointToSeg(px,py,x1,y1,x2,y2){
+  const A=px-x1,B=py-y1,C=x2-x1,D=y2-y1;
+  const dotp=A*C+B*D, len=C*C+D*D;
+  let t=len?dotp/len:-1; t=Math.max(0,Math.min(1,t));
+  const x=x1+t*C,y=y1+t*D;
+  return Math.hypot(px-x,py-y);
+}
+const wallSegments = [];
+function parseWalls(){
+  document.querySelectorAll('.wall').forEach(path=>{
+    const len=path.getTotalLength();
+    let prev=path.getPointAtLength(0);
+    for(let l=8;l<=len;l+=8){
+      const cur=path.getPointAtLength(Math.min(l,len));
+      wallSegments.push([prev.x,prev.y,cur.x,cur.y]);
+      prev=cur;
+    }
+  });
+}
+parseWalls();
+function hitsWall(x,y){
+  for(const s of wallSegments){
+    if(distPointToSeg(x,y,...s)<13) return true;
+  }
+  return false;
+}
+function nearGoal(x,y){return Math.hypot(x-820,y-90)<28;}
+
+function updateTrace(){
+  trace.setAttribute('points',points.map(p=>p.join(',')).join(' '));
+  dot.setAttribute('cx',lastSafe[0]); dot.setAttribute('cy',lastSafe[1]);
+}
+function startMaze(){
+  resetMaze();
+  drawing=true;
+  startTime=performance.now();
+  timerId=setInterval(()=>timeEl.textContent=((performance.now()-startTime)/1000).toFixed(1),100);
+  mazeStatus.textContent='Trace le chemin jusqu’au cercle vert.'; mazeStatus.className='status';
+}
+function resetMaze(){
+  drawing=false; finished=false; errors=0; points=[[80,430]]; lastSafe=[80,430];
+  errEl.textContent='0'; timeEl.textContent='0.0'; mazeStatus.textContent='';
+  if(timerId) clearInterval(timerId);
+  updateTrace();
+}
+function handleMazeMove(evt){
+  if(!drawing||finished) return;
+  evt.preventDefault();
+  const p=svgPoint(evt), x=p.x,y=p.y;
+  if(x<20||x>880||y<20||y>500) return;
+  if(hitsWall(x,y)){
+    errors++; errEl.textContent=errors;
+    mazeStatus.textContent='Mur touché ! Repars du dernier point.'; mazeStatus.className='status bad';
+    drawing=false;
+    setTimeout(()=>drawing=true,250);
+    return;
+  }
+  lastSafe=[x,y]; points.push([x,y]); updateTrace();
+  if(nearGoal(x,y)){
+    finished=true; drawing=false; clearInterval(timerId);
+    mazeStatus.textContent='Bravo ! Tu as trouvé le chemin.'; mazeStatus.className='status ok';
+  }
+}
+maze.addEventListener('pointerdown',e=>{ if(!startTime||finished) startMaze(); drawing=true; maze.setPointerCapture(e.pointerId); handleMazeMove(e); });
+maze.addEventListener('pointermove',handleMazeMove);
+maze.addEventListener('pointerup',()=>{ if(!finished) drawing=false; });
+document.getElementById('mazeStartBtn').onclick=startMaze;
+document.getElementById('mazeResetBtn').onclick=resetMaze;
+
+/* ---------------- SHAPES ---------------- */
+const shapeTypes=['rect','circle','triangle','square','triangle','circle','triangle','rect','triangle','circle'];
+const shapeGrid=document.getElementById('shapeGrid');
+let shapeScore=0, selectedCorrect=new Set();
+
+function svgFor(type,rot=0){
+  if(type==='triangle') return `<svg class="shape" viewBox="0 0 100 100" style="transform:rotate(${rot}deg)"><polygon points="50,8 92,88 8,88"/></svg>`;
+  if(type==='circle') return `<svg class="shape" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38"/></svg>`;
+  if(type==='square') return `<svg class="shape" viewBox="0 0 100 100"><rect x="16" y="16" width="68" height="68"/></svg>`;
+  return `<svg class="shape" viewBox="0 0 120 80"><rect x="8" y="18" width="104" height="44"/></svg>`;
+}
+function newShapes(){
+  shapeGrid.innerHTML=''; shapeScore=0; selectedCorrect.clear();
+  document.getElementById('shapeScore').textContent='0';
+  document.getElementById('triangleTotal').textContent=shapeTypes.filter(x=>x==='triangle').length;
+  document.getElementById('shapeStatus').textContent='';
+  const arr=shapeTypes.map((t,i)=>({t,sort:Math.random(),rot:[0,18,-25,90][Math.floor(Math.random()*4)],i})).sort((a,b)=>a.sort-b.sort);
+  arr.forEach((o,index)=>{
+    const d=document.createElement('div'); d.className='shapeCard'; d.innerHTML=svgFor(o.t,o.rot);
+    d.onclick=()=>{
+      if(o.t==='triangle'){
+        if(!d.classList.contains('selected')){
+          d.classList.add('selected'); shapeScore++; document.getElementById('shapeScore').textContent=shapeScore;
+        }
+        if(shapeScore===shapeTypes.filter(x=>x==='triangle').length){
+          const s=document.getElementById('shapeStatus'); s.textContent='Bravo ! Tous les triangles sont coloriés.'; s.className='status ok';
+        }
+      }else{
+        d.classList.remove('wrong'); void d.offsetWidth; d.classList.add('wrong');
+        const s=document.getElementById('shapeStatus'); s.textContent='Ce n’est pas un triangle.'; s.className='status bad';
+      }
+    };
+    shapeGrid.appendChild(d);
+  });
+}
+document.getElementById('shapeReset').onclick=newShapes;
+newShapes();
+
+/* ---------------- BURGERS ---------------- */
+const burgerData=[
+  {id:1, burger:'🍔', name:'Hamburger 1', ingredients:['🥩','🍅','🧀','🥬','🧅']},
+  {id:2, burger:'🍔', name:'Hamburger 2', ingredients:['🧀','🥒','🥩','🍅','🥬']},
+  {id:3, burger:'🍔', name:'Hamburger 3', ingredients:['🥩','🍅','🧀','🥬','🥓']},
+  {id:4, burger:'🍔', name:'Hamburger 4', ingredients:['🧀','🥬','🥒','🌭','🥩']}
+];
+let activeChoice=null, burgerScore=0;
+
+function buildBurger(){
+  burgerScore=0; activeChoice=null;
+  document.getElementById('burgerScore').textContent='0';
+  document.getElementById('burgerStatus').textContent='';
+  const bg=document.getElementById('burgerGrid'); bg.innerHTML='';
+  burgerData.forEach(b=>{
+    const d=document.createElement('div'); d.className='burger'; d.dataset.id=b.id;
+    d.innerHTML=`<div class="burgerVisual">${b.burger}</div><strong>${b.name}</strong><div class="dropzone">Dépose ici</div>`;
+    const dz=d.querySelector('.dropzone');
+    dz.addEventListener('dragover',e=>e.preventDefault());
+    dz.addEventListener('drop',e=>{e.preventDefault(); checkBurger(b.id, Number(e.dataTransfer.getData('text/plain')), dz);});
+    d.onclick=()=>{ if(activeChoice) checkBurger(b.id, activeChoice, dz); };
+    bg.appendChild(d);
+  });
+
+  const choices=document.getElementById('choices'); choices.innerHTML='';
+  [...burgerData].sort(()=>Math.random()-.5).forEach(b=>{
+    const c=document.createElement('div'); c.className='choice'; c.draggable=true; c.dataset.id=b.id;
+    c.innerHTML=`<strong>Carte ${b.id}</strong><div class="icons">${b.ingredients.join(' ')}</div>`;
+    c.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',b.id));
+    c.onclick=(e)=>{e.stopPropagation(); document.querySelectorAll('.choice').forEach(x=>x.style.outline=''); activeChoice=b.id; c.style.outline='3px solid #6f39a8';};
+    choices.appendChild(c);
+  });
+}
+function checkBurger(targetId, choiceId, dz){
+  const s=document.getElementById('burgerStatus');
+  if(targetId===choiceId){
+    if(!dz.classList.contains('good')){
+      burgerScore++; document.getElementById('burgerScore').textContent=burgerScore;
+    }
+    dz.classList.add('good'); dz.textContent='Carte '+choiceId+' ✓';
+    const card=document.querySelector(`.choice[data-id="${choiceId}"]`); if(card) card.classList.add('used');
+    s.textContent='Bonne association !'; s.className='status ok';
+    activeChoice=null; document.querySelectorAll('.choice').forEach(x=>x.style.outline='');
+    if(burgerScore===4){s.textContent='Bravo ! Tous les hamburgers sont correctement associés.';}
+  }else{
+    s.textContent='Essaie une autre carte.'; s.className='status bad';
+  }
+}
+document.getElementById('burgerReset').onclick=buildBurger;
+buildBurger();
+</script>
+</body>
+</html>
